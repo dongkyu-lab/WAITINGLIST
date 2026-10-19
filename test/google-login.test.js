@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {createHash} from 'node:crypto';
-import {validateCloudConfig} from '../server/cloud-config.js';
+import {validateCloudConfig,resolveDesktopSetup,ownerAccessRules} from '../server/cloud-config.js';
+import {readFileSync} from 'node:fs';
 const {createGoogleLogin}=createRequire(import.meta.url)('../desktop/google-login.cjs');
 const google={client_id:'123456-example.apps.googleusercontent.com',client_secret:'installed-public-client-secret'};
 
@@ -38,4 +39,22 @@ test('cloud configuration accepts only project identifiers and fixed Google OAut
   assert.throws(()=>validateCloudConfig({...config,google:{client_id:'https://attacker.invalid'}}));
   assert.throws(()=>validateCloudConfig({...config,workspaceId:'../other'}));
   assert.equal(validateCloudConfig({...config,emulatorOrigin:'http://attacker.invalid'}).emulatorOrigin,undefined);
+});
+test('downloaded Desktop OAuth JSON merges only into the expected public app configuration',()=>{
+  const defaults={firebase:{projectId:'demo-waitinglist',apiKey:'not-a-secret-public-test-api-key'},google:{client_id:google.client_id},workspaceId:'waitinglist'};
+  const result=resolveDesktopSetup({installed:{...google,project_id:'demo-waitinglist',token_uri:'https://untrusted.invalid/token'}},defaults);
+  assert.equal(result.firebase.projectId,'demo-waitinglist');assert.equal(result.google.client_secret,google.client_secret);assert.equal(result.google.token_uri,undefined);
+  assert.throws(()=>resolveDesktopSetup({installed:{...google,project_id:'wrong-project'}},defaults));
+  assert.throws(()=>resolveDesktopSetup({installed:{...google,client_id:'123456-other.apps.googleusercontent.com'}},defaults));
+  assert.throws(()=>resolveDesktopSetup({...defaults,google:{client_id:google.client_id}},defaults),/OAuth JSON/);
+});
+test('an owner-specific copy preserves the deny-by-default access rules without changing the shared template',()=>{
+  const template=readFileSync('cloud/firestore.rules','utf8'),result=ownerAccessRules(template,' OWNER@EXAMPLE.TEST ');
+  assert.ok(result.includes('email() == "owner@example.test"'));assert.ok(!result.includes('SET_OWNER_EMAIL_BEFORE_DEPLOYING'));
+  assert.ok(template.includes('SET_OWNER_EMAIL_BEFORE_DEPLOYING'));assert.ok(result.includes('function member('));
+  assert.throws(()=>ownerAccessRules(template,'invalid-email'));assert.throws(()=>ownerAccessRules('missing placeholder','owner@example.test'));
+});
+test('missing desktop OAuth credentials fail before opening a Google sign-in window',async()=>{
+  let opened=false;const manager=createGoogleLogin({openExternal:async()=>{opened=true;}});
+  await assert.rejects(manager.login({client_id:google.client_id}),/OAuth JSON/);assert.equal(opened,false);
 });

@@ -8,6 +8,7 @@ files:
   - server/**/*
   - dist/**/*
   - public/icons/**/*
+  - cloud/firestore.rules
   - package.json
   - '!**/*.log'
   - '!**/data/**'

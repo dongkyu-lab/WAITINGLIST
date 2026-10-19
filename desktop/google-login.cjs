@@ -6,6 +6,7 @@ function createGoogleLogin({openExternal,fetchImpl=fetch,timeoutMs=180000}={}){
   return {
     cancel(){active?.cancel();},
     async login(config){
+      if(!config.client_secret)throw Error('Google에서 내려받은 데스크톱 OAuth JSON을 먼저 선택해 주세요.');
       if(active)throw Error('Google 로그인이 이미 진행 중입니다. 브라우저에서 완료해 주세요.');
       const verifier=randomBytes(48).toString('base64url'),challenge=createHash('sha256').update(verifier).digest('base64url'),state=randomBytes(32).toString('base64url');
       let server,timer,redirect,settled=false;

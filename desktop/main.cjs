@@ -1,10 +1,12 @@
-const {app,BrowserWindow,Tray,Menu,nativeImage,ipcMain,dialog,shell,safeStorage}=require('electron');
+const {app,BrowserWindow,Tray,Menu,nativeImage,ipcMain,dialog,shell,safeStorage,clipboard}=require('electron');
 const {fork}=require('node:child_process');
 const {randomBytes,randomUUID}=require('node:crypto');
 const {join,basename}=require('node:path');
-const {existsSync,mkdirSync,mkdtempSync,readFileSync,writeFileSync}=require('node:fs');
+const {existsSync,mkdirSync,mkdtempSync,readFileSync,writeFileSync,renameSync}=require('node:fs');
 const {tmpdir}=require('node:os');
 const {createGoogleLogin}=require('./google-login.cjs');
+// Public app identifiers only. OAuth secrets and tokens are never bundled here.
+const projectDefaults=require('./project-defaults.json');
 
 const smoke=process.argv.includes('--smoke-test');
 const cloudSmoke=smoke&&process.argv.includes('--require-google-smoke');
@@ -79,12 +81,15 @@ if(!locked){app.quit();}else{
     const headers={'Authorization':`Bearer ${token}`,'Content-Type':'application/json'};
     const denied=await fetch(origin+'/api/companies');if(denied.status!==401)throw Error('Private desktop API is unprotected');
     if(cloudSmoke){
+      if(!readFileSync(join(app.getAppPath(),'cloud','firestore.rules'),'utf8').includes('SET_OWNER_EMAIL_BEFORE_DEPLOYING'))throw Error('Administrator access-rule template missing');
       const state=await(await fetch(origin+'/api/auth',{headers})).json();
       if(state.authenticated||state.provider!=='google')throw Error('Google login gate failed');
       if((await fetch(origin+'/api/companies',{headers})).status!==401)throw Error('Company data leaked before Google login');
       const page=await window.webContents.executeJavaScript(`new Promise(resolve=>{let attempts=0;const inspect=()=>{const h=document.querySelector('h1')?.textContent;if(h||++attempts>=100)resolve({h,button:document.querySelector('.google-sign-in')?.textContent});else setTimeout(inspect,100);};inspect();})`);
       if(!page.h?.includes('Google')||!page.button?.includes('Google'))throw Error('Google login screen did not render');
-      console.log('CLOUD_DESKTOP_SMOKE_PASS: real Google login gate, denied data before login, account setup screen');await quit();return;
+      const setup=await window.webContents.executeJavaScript('window.waitingListDesktop.getCloudSetup()');
+      if(setup.projectId!==projectDefaults.firebase.projectId||setup.oauthReady)throw Error('Setup state exposed incomplete OAuth as ready');
+      console.log('CLOUD_DESKTOP_SMOKE_PASS: Google login gate, denied data, local OAuth setup, packaged access-rule template');await quit();return;
     }
     const auto=await(await fetch(origin+'/api/companies',{headers})).json();if(auto.sheetAuto.status!=='success'||auto.companies.length!==1||auto.companies[0].notes!=='')throw Error('Automatic sheet startup read failed');
     const response=await fetch(origin+'/api/companies',{method:'POST',headers,body:JSON.stringify({name:'설치 검증용 업체',startDate:'2026-10-19',mainKeyword:'검증 키워드',category:'검증 상품'})});
@@ -112,7 +117,7 @@ if(!locked){app.quit();}else{
         const {validateCloudConfig}=await import('../server/cloud-config.js');
         if(existsSync(saved)&&safeStorage.isEncryptionAvailable())cloudConfig=validateCloudConfig(JSON.parse(safeStorage.decryptString(readFileSync(saved))));
         else if(existsSync(bundled))cloudConfig=validateCloudConfig(JSON.parse(readFileSync(bundled,'utf8')));
-        if(cloudConfig)await requestCloud('cloud-configure',{config:cloudConfig});
+        if(cloudConfig?.google.client_secret)await requestCloud('cloud-configure',{config:cloudConfig});else cloudConfig=null;
       }catch{cloudConfig=null;console.error('공유 연결 설정을 다시 등록해 주세요.');}
     }
     window=new BrowserWindow({width:1440,height:960,minWidth:1050,minHeight:720,show:false,title:'Waiting List',icon:icon(),backgroundColor:'#f4f8f8',webPreferences:{preload:join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,partition:'waitinglist-desktop'}});
@@ -130,6 +135,16 @@ if(!locked){app.quit();}else{
     tray.setContextMenu(Menu.buildFromTemplate([{label:'Waiting List 열기',click:show},{type:'separator'},{label:'프로그램 종료',click:()=>quit()}]));
     tray.on('double-click',show);
     ipcMain.handle('desktop:info',()=>info());
+    ipcMain.handle('desktop:cloud-setup',()=>({projectId:cloudConfig?.firebase.projectId||projectDefaults.firebase.projectId,oauthReady:Boolean(cloudConfig?.google.client_secret)}));
+    ipcMain.handle('desktop:oauth-clients',()=>shell.openExternal(`https://console.cloud.google.com/auth/clients?project=${projectDefaults.firebase.projectId}`));
+    ipcMain.handle('desktop:copy-access-rules',async(_,email)=>{
+      const {ownerAccessRules}=await import('../server/cloud-config.js');
+      const rules=ownerAccessRules(readFileSync(join(app.getAppPath(),'cloud','firestore.rules'),'utf8'),email);
+      const projectId=cloudConfig?.firebase.projectId||projectDefaults.firebase.projectId;
+      clipboard.writeText(rules);
+      await shell.openExternal(`https://console.firebase.google.com/project/${projectId}/firestore/rules`);
+      return {copied:true};
+    });
     ipcMain.handle('desktop:google-login',async()=>{
       if(!cloudConfig)throw Error('먼저 공유 연결 설정파일을 등록해 주세요.');
       if(googleBusy)throw Error('Google 로그인이 이미 진행 중입니다.');
@@ -137,15 +152,16 @@ if(!locked){app.quit();}else{
     });
     ipcMain.handle('desktop:configure-cloud',async()=>{
       if(googleBusy)throw Error('Google 로그인이 끝난 뒤 설정을 바꿔 주세요.');
-      const {canceled,filePaths}=await dialog.showOpenDialog(window,{title:'Waiting List 공유 연결 설정파일',filters:[{name:'공유 연결 설정',extensions:['json']}],properties:['openFile']});
+      const {canceled,filePaths}=await dialog.showOpenDialog(window,{title:'Google에서 내려받은 데스크톱 OAuth JSON 선택',filters:[{name:'Google 데스크톱 OAuth / 공유 연결 설정',extensions:['json']}],properties:['openFile']});
       if(canceled)return {canceled:true};
       const raw=readFileSync(filePaths[0]);if(raw.length>20000)throw Error('20KB 이하의 공유 연결 설정파일을 선택해 주세요.');
-      const {validateCloudConfig}=await import('../server/cloud-config.js');
+      const {resolveDesktopSetup}=await import('../server/cloud-config.js');
       let parsed;try{parsed=JSON.parse(raw.toString('utf8'));}catch{throw Error('올바른 JSON 연결 설정파일이 아닙니다.');}
-      const config=validateCloudConfig(parsed);
+      const config=resolveDesktopSetup(parsed,projectDefaults);
       if(!safeStorage.isEncryptionAvailable())throw Error('이 PC에서 연결 설정을 안전하게 저장할 수 없습니다. Windows 계정 보안 설정을 확인해 주세요.');
       const status=await requestCloud('cloud-configure',{config});
-      writeFileSync(join(app.getPath('userData'),'cloud-config.bin'),safeStorage.encryptString(JSON.stringify(config)),{mode:0o600});cloudConfig=config;return status;
+      const destination=join(app.getPath('userData'),'cloud-config.bin');
+      writeFileSync(destination+'.tmp',safeStorage.encryptString(JSON.stringify(config)),{mode:0o600});renameSync(destination+'.tmp',destination);cloudConfig=config;return status;
     });
     ipcMain.handle('desktop:cloud-guide',()=>shell.openExternal('https://github.com/dongkyu-lab/WAITINGLIST/blob/main/CLOUD-SETUP.md'));
     ipcMain.handle('desktop:auto-start',(_,value)=>{

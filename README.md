@@ -1,10 +1,10 @@
 # Waiting List · 마케팅 업체 관리 프로그램
 
-**현재 main은 1.1.0-rc.1 Google 로그인·PC 공유 연결 준비 버전입니다.** 사용자 소유 Firebase 프로젝트와 Google OAuth는 아직 연결되지 않았습니다. 프로젝트와 접속 규칙을 준비하기 전에는 로그인 화면에서 업체 목록으로 들어갈 수 없습니다. [무료 공유 연결 설정 안내](CLOUD-SETUP.md)를 확인하세요.
+**현재 main은 1.1.0-rc.2 Google 로그인·PC 공유 연결 준비 버전입니다.** 프로젝트 waitinglist-da493의 공개 Firebase 앱 설정과 데스크톱 OAuth 클라이언트 ID를 포함합니다. Google에서 내려받은 데스크톱 OAuth JSON을 각 PC에서 선택하고, 관리자가 서버 접속 규칙을 게시한 뒤 실제 로그인·공유를 사용할 수 있습니다. 실제 계정 로그인과 서버 규칙 배포는 아직 확인하지 않았습니다. [무료 공유 연결 설정 안내](CLOUD-SETUP.md)를 확인하세요.
 
-[공유 연결 준비 설치파일](https://github.com/dongkyu-lab/WAITINGLIST/releases/tag/desktop-v1.1.0-rc.1) · [기존 로컬 버전 1.0.3](https://github.com/dongkyu-lab/WAITINGLIST/releases/tag/desktop-v1.0.3)
+[공유 연결 준비 설치파일](https://github.com/dongkyu-lab/WAITINGLIST/releases/tag/desktop-v1.1.0-rc.2) · [기존 로컬 버전 1.0.3](https://github.com/dongkyu-lab/WAITINGLIST/releases/tag/desktop-v1.0.3)
 
-검증된 RC 설치파일: Windows CI [39210493319](https://github.com/dongkyu-lab/WAITINGLIST/actions/runs/39210493319)에서 공식 에뮬레이터 규칙·동기화 검사, Windows 실행·패키지·로그인 전 차단 검사가 통과했습니다. 게시된 설치파일 전체를 내려받아 SHA256과 실행파일 형식도 확인했습니다. 실제 Google 프로젝트 연결은 아직 완료되지 않았습니다.
+이전 RC의 공식 에뮬레이터·Windows 검증은 [39210493319](https://github.com/dongkyu-lab/WAITINGLIST/actions/runs/39210493319)에서 확인할 수 있습니다. 현재 버전의 Windows 검증 결과는 [워크플로](https://github.com/dongkyu-lab/WAITINGLIST/actions/workflows/windows-desktop.yml)를 확인하세요. 실제 Google 로그인은 사용자 PC의 OAuth JSON 등록과 서버 규칙 게시 후 확인해야 합니다.
 
 ## Windows 설치
 
@@ -30,7 +30,7 @@ Windows 10/11 64비트용입니다. 일반 사용자는 Setup.exe만으로 설�
 
 기존 로컬 데이터는 Electron 사용자 데이터 폴더의 data/waitinglist.sqlite에 보존됩니다. 공유 버전은 프로젝트·공유 공간·계정별로 data/accounts/ 안에 별도 캐시 DB를 만듭니다. 인증 토큰을 DB에 저장하지 않습니다. 연결 설정은 Windows 계정 보안 기능으로 암호화합니다. 로그인 토큰은 프로세스 메모리에서만 유지하며 프로그램을 완전히 종료하면 다시 로그인합니다.
 
-전체 백업은 현재 계정의 수신된 업체·알림 캐시를 SQLite VACUUM INTO로 저장합니다. 백업에는 고객 정보가 들어갑니다. 로컬에 백업을 놓는 것만으로 공유 서버가 복원되지는 않습니다. 기존 PC 데이터를 공유할 때는 관리자가 건수와 안내를 확인해 실행합니다. 이미 수정된 공유 업체는 덮어쓰지 않습니다. 실제 고객 데이터·OAuth 설정·환경 파일·계정 캐시는 저장소와 설치파일에 넣지 않습니다.
+전체 백업은 현재 계정의 수신된 업체·알림 캐시를 SQLite VACUUM INTO로 저장합니다. 백업에는 고객 정보가 들어갑니다. 로컬에 백업을 놓는 것만으로 공유 서버가 복원되지는 않습니다. 기존 PC 데이터를 공유할 때는 관리자가 건수와 안내를 확인해 실행합니다. 이미 수정된 공유 업체는 덮어쓰지 않습니다. 실제 고객 데이터·OAuth 인증 비밀번호·로그인 토큰·환경 파일·계정 캐시는 저장소와 설치파일에 넣지 않습니다. Firebase 웹 API 키와 앱용 OAuth 클라이언트 ID는 공개 앱 식별 정보로 desktop/project-defaults.json에 포함합니다.
 
 ## 개발과 검증
 

@@ -1,0 +1,10 @@
+{
+  "firebase": {
+    "projectId": "waitinglist-da493",
+    "apiKey": "AIzaSyCQkUf-5_bhXHqQhi-yUboUP_qxNL6EWNA"
+  },
+  "google": {
+    "client_id": "662565532793-fci0oq0nbanmlvq87mt6f7g8ja4smjg1.apps.googleusercontent.com"
+  },
+  "workspaceId": "waitinglist"
+}
