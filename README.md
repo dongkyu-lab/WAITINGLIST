@@ -36,6 +36,8 @@ npm run build
 
 ## 배포
 
+호스팅이 없다면 [파일 다운로드 없이 Render에 배포하기](DEPLOYMENT.ko.md)를 참고하세요. 저장소에 검토 가능한 `render.yaml`이 있으며 유료 서버·영구 디스크를 생성하는 설정입니다. 비용과 생성 버튼을 Render에서 직접 확인하기 전에는 서비스를 만들지 않습니다. 외부 서비스 생성·실물 기기 설치는 아직 검증하지 않았습니다.
+
 1. `.env.example`을 참고해 `.env`에 12자 이상의 `APP_PASSWORD`를 안전하게 설정합니다. 저장소에 커밋하지 마세요.
 2. Node.js 24.5 이상 호스트에서 `npm ci && npm run build && npm start`를 실행하거나, Docker 호스트에서 `docker compose up -d --build`를 실행합니다.
 3. HTTPS를 제공하는 리버스 프록시를 3000번 포트 앞에 구성합니다. 배포 로그인 쿠키는 Secure이므로 HTTPS가 필수입니다. 프록시에서 Host와 X-Forwarded-Proto 헤더를 보존하고, 앱 포트는 프록시를 통해서만 접근하도록 제한하세요.
@@ -70,3 +72,7 @@ npm run build
 이 환경의 작업 폴더는 `/workspace/WAITINGLIST`입니다. 같은 클라우드에 연결된 VS Code에서 열면 작업 파일을 확인할 수 있습니다. 로컬 PC에는 코드가 자동 동기화되지 않으므로 GitHub에 저장한 뒤 clone/pull해야 합니다. 코드는 GitHub의 `dongkyu-lab/WAITINGLIST` 저장소 main 브랜치로 전달합니다. 업체 데이터·비밀번호는 포함하지 않습니다. 이 채팅의 변경이 PC에 자동 동기화되지는 않습니다. VS Code 안에서 Codex를 사용하면 해당 작업 공간의 수정 과정을 볼 수 있습니다.
 
 서버는 Node의 `--use-env-proxy`로 기존 HTTP_PROXY/HTTPS_PROXY/NO_PROXY 설정을 따릅니다. TLS 검증은 유지합니다. API 헬스체크뿐 아니라 시트 미리보기 성공까지 확인했습니다.
+
+## AI API 선택
+
+현재 업체·날짜·알림 기능에는 생성형 AI API가 필요하지 않습니다. 향후 AI 기능이 필요하면 사용자 요청에 따라 Google Gemini를 우선 검토합니다. 사용자가 언급한 `Gemini 3.8`의 실제 공식 모델 ID와 지원 여부는 연동 전에 확인해야 하며, 아직 해당 모델을 연결하거나 지원한다고 검증하지 않았습니다. API 키는 서버의 비밀 설정에 보관하고 프런트엔드·GitHub·채팅에 노출하지 않습니다.

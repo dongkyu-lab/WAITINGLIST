@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+# Creates paid resources only after you confirm deployment in Render.
+# Baseline verified 2026-10-19: US$7/month Starter + US$0.25/month per 1 GB disk.
+services:
+  - type: web
+    name: waitinglist
+    runtime: node
+    repo: https://github.com/dongkyu-lab/WAITINGLIST
+    branch: main
+    region: singapore
+    plan: starter
+    numInstances: 1
+    autoDeployTrigger: "off"
+    buildCommand: npm ci --include=dev --no-audit --no-fund && npm test && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 24.19.0
+      - key: DATABASE_PATH
+        value: /var/data/flow.sqlite
+      - key: APP_PASSWORD
+        generateValue: true
+    disk:
+      name: waitinglist-data
+      mountPath: /var/data
+      sizeGB: 1
