@@ -6,7 +6,7 @@
 
 [Windows 설치파일 1.0.2 다운로드](https://github.com/dongkyu-lab/WAITINGLIST/releases/download/desktop-v1.0.2/WaitingList-1.0.2-Setup.exe) 또는 [GitHub Release](https://github.com/dongkyu-lab/WAITINGLIST/releases/tag/desktop-v1.0.2)에서 `WaitingList-1.0.2-Setup.exe`를 받습니다. ZIP 소스나 GitHub Actions의 개발자용 아티팩트를 받을 필요가 없습니다. Node.js, VS Code, 별도 서버 가입과 월 호스팅 요금 없이 설치 후 실행합니다. 코드 서명이 없는 설치파일이므로 게시자 확인 경고가 나올 수 있습니다. 보안 설정은 끄지 마세요.
 
-설치파일은 Windows CI에서 테스트 14개, 실제 Electron 실행, NSIS 설치파일 생성, 패키지 실행을 검증한 뒤 게시합니다. 사용자 PC에서 설치 마법사를 실행하는 단계는 별도 확인이 필요합니다. [Windows 검증 결과](https://github.com/dongkyu-lab/WAITINGLIST/actions/workflows/windows-desktop.yml)
+2026-10-19 Windows CI에서 테스트 14개, 실제 Electron 실행, NSIS 설치파일 생성, 패키지 실행이 모두 통과했습니다. 게시된 1.0.2 설치파일 전체를 내려받아 SHA256과 Windows 실행파일 형식도 확인했습니다. 사용자 PC에서 설치 마법사를 실행하는 단계는 별도 확인이 필요합니다. [Windows 검증 결과](https://github.com/dongkyu-lab/WAITINGLIST/actions/runs/39205934330)
 
 처음 실행하면 **지정 구글시트를 자동으로 읽어 업체를 표시**합니다. 가져오기 버튼은 누르지 않아도 됩니다. 실행 중에는 5분마다 새 업체를 확인하며, 연결 실패 시 저장된 데이터를 유지하고 자동 재시도합니다. 실제 업체 데이터와 비밀번호는 공개 저장소나 설치파일에 넣지 않습니다. 최초 읽기와 새 업체 확인에는 인터넷이 필요합니다. 업체 조회·편집·알림 기록은 이 PC 안에서 처리합니다. 기존 버전 사용자는 트레이에서 프로그램을 종료한 뒤 새 버전을 설치하세요. 앱 데이터는 유지됩니다.
 
