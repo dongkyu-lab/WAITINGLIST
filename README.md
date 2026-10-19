@@ -4,9 +4,9 @@
 
 ## 사용자가 설치하는 방법
 
-[Windows 설치파일 1.0.2 다운로드](https://github.com/dongkyu-lab/WAITINGLIST/releases/download/desktop-v1.0.2/WaitingList-1.0.2-Setup.exe) 또는 [GitHub Release](https://github.com/dongkyu-lab/WAITINGLIST/releases/tag/desktop-v1.0.2)에서 `WaitingList-1.0.2-Setup.exe`를 받습니다. ZIP 소스나 GitHub Actions의 개발자용 아티팩트를 받을 필요가 없습니다. Node.js, VS Code, 별도 서버 가입과 월 호스팅 요금 없이 설치 후 실행합니다. 코드 서명이 없는 설치파일이므로 게시자 확인 경고가 나올 수 있습니다. 보안 설정은 끄지 마세요.
+[Windows 설치파일 1.0.3 다운로드](https://github.com/dongkyu-lab/WAITINGLIST/releases/download/desktop-v1.0.3/WaitingList-1.0.3-Setup.exe) 또는 [GitHub Release](https://github.com/dongkyu-lab/WAITINGLIST/releases/tag/desktop-v1.0.3)에서 `WaitingList-1.0.3-Setup.exe`를 받습니다. ZIP 소스나 GitHub Actions의 개발자용 아티팩트를 받을 필요가 없습니다. Node.js, VS Code, 별도 서버 가입과 월 호스팅 요금 없이 설치 후 실행합니다. 코드 서명이 없는 설치파일이므로 게시자 확인 경고가 나올 수 있습니다. 보안 설정은 끄지 마세요.
 
-2026-10-19 Windows CI에서 테스트 14개, 실제 Electron 실행, NSIS 설치파일 생성, 패키지 실행이 모두 통과했습니다. 게시된 1.0.2 설치파일 전체를 내려받아 SHA256과 Windows 실행파일 형식도 확인했습니다. 사용자 PC에서 설치 마법사를 실행하는 단계는 별도 확인이 필요합니다. [Windows 검증 결과](https://github.com/dongkyu-lab/WAITINGLIST/actions/runs/39205934330)
+설치파일은 Windows CI에서 테스트 14개, 실제 Electron 실행, NSIS 설치파일 생성, 패키지 실행을 검증한 뒤 게시합니다. 사용자 PC에서 설치 마법사를 실행하는 단계는 별도 확인이 필요합니다. [Windows 검증 결과](https://github.com/dongkyu-lab/WAITINGLIST/actions/workflows/windows-desktop.yml)
 
 처음 실행하면 **지정 구글시트를 자동으로 읽어 업체를 표시**합니다. 가져오기 버튼은 누르지 않아도 됩니다. 실행 중에는 5분마다 새 업체를 확인하며, 연결 실패 시 저장된 데이터를 유지하고 자동 재시도합니다. 실제 업체 데이터와 비밀번호는 공개 저장소나 설치파일에 넣지 않습니다. 최초 읽기와 새 업체 확인에는 인터넷이 필요합니다. 업체 조회·편집·알림 기록은 이 PC 안에서 처리합니다. 기존 버전 사용자는 트레이에서 프로그램을 종료한 뒤 새 버전을 설치하세요. 앱 데이터는 유지됩니다.
 
@@ -16,11 +16,18 @@
 - 종료일은 모든 항목에 예외 없이 시작일 +30일. 종료일은 읽기 전용이며 시작일이 비면 종료일도 빈칸.
 - 종료 7~6일 전 노랑, 5~4일 전 주황, 3~0일 전 빨강, 종료일 다음날부터 회색. 날짜 미정은 종료 알림에서 제외.
 - 한국 시간 09/12/15시에 종료 7일 전~종료 당일 명단을 앱 내 알림함에 저장. 앱 내 읽음 처리는 이 PC 데이터 기준.
-- 청록색 테마, 전체 글씨 크기 +2pt, 업체 검색·상태 필터·정렬, CSV 내보내기.
+- 청록색 테마, 본문 글씨 크기 +2pt, 사이드바 Waiting List 글씨는 22px 한 줄 표시, 업체 검색·상태 필터·정렬, CSV 내보내기.
 - 시작 시 구글시트 자동 읽기, 실행 중 5분마다 새 업체 확인, 연결 상태 표시.
+- 사용자 제공 로고를 기준으로 복원한 고해상도 마크. 앱·창·트레이·설치파일·바로가기 아이콘에 적용.
 - 트레이 실행, 선택 가능한 Windows 로그인 시 자동 실행, SQLite 온라인 백업.
 
 **PC가 켜져 있고 절전 상태가 아니며 프로그램이 실행 중이어야 정시 알림이 기록됩니다.** 창의 X는 트레이로 숨깁니다. 완전히 끝내려면 트레이 메뉴의 ‘프로그램 종료’를 선택하세요. 종료되거나 꺼져 있던 시간대의 알림은 소급 생성하지 않습니다. OS 푸시·이메일·Slack 발송은 포함하지 않습니다.
+
+## 다른 컴퓨터에 설치
+
+Windows 10/11 64비트 PC라면 동일한 Setup.exe만으로 설치할 수 있습니다. Node.js, VS Code, 별도 서버 가입은 필요하지 않습니다. 인터넷이 연결되고 지정 시트의 링크 공개 읽기가 허용되면 첫 자동 읽기·5분마다 확인·시트 새로고침을 사용할 수 있습니다. 시트 접근 권한이 바뀌거나 회사 네트워크에서 Google이 차단되면 연결에 실패할 수 있습니다.
+
+각 PC의 앱 수정·메모·알림은 해당 PC에 따로 저장됩니다. 이 내용은 다른 PC나 원본 시트에 자동 반영되지 않습니다.
 
 ## 데이터와 백업
 

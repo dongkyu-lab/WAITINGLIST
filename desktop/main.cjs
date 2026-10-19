@@ -15,7 +15,7 @@ if(!locked){app.quit();}else{
   let window,tray,child,origin,quitting=false,backupBusy=false;
   const token=randomBytes(32).toString('hex');
   const pending=new Map();
-  const icon=()=>join(app.getAppPath(),'public','icons','icon-192.png');
+  const icon=()=>join(app.getAppPath(),'public','icons','icon-512.png');
   const dbPath=()=>join(app.getPath('userData'),'data','waitinglist.sqlite');
   function show(){if(!window)return;window.show();if(window.isMinimized())window.restore();window.focus();}
   function info(){return {version:app.getVersion(),autoStart:process.platform==='win32'?app.getLoginItemSettings({args:['--background']}).openAtLogin:false,canAutoStart:process.platform==='win32'&&app.isPackaged};}
