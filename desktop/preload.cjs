@@ -9,5 +9,6 @@ contextBridge.exposeInMainWorld('waitingListDesktop',{
   getCloudSetup:()=>ipcRenderer.invoke('desktop:cloud-setup'),
   copyAccessRules:email=>ipcRenderer.invoke('desktop:copy-access-rules',email),
   openOAuthClients:()=>ipcRenderer.invoke('desktop:oauth-clients'),
+  openAuthDomains:()=>ipcRenderer.invoke('desktop:auth-domains'),
   openCloudGuide:()=>ipcRenderer.invoke('desktop:cloud-guide')
 });

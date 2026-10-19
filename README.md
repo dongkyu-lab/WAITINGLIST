@@ -1,10 +1,10 @@
 # Waiting List · 마케팅 업체 관리 프로그램
 
-**현재 main은 1.1.0-rc.2 Google 로그인·PC 공유 연결 준비 버전입니다.** 프로젝트 waitinglist-da493의 공개 Firebase 앱 설정과 데스크톱 OAuth 클라이언트 ID를 포함합니다. Google에서 내려받은 데스크톱 OAuth JSON을 각 PC에서 선택하고, 관리자가 서버 접속 규칙을 게시한 뒤 실제 로그인·공유를 사용할 수 있습니다. 실제 계정 로그인과 서버 규칙 배포는 아직 확인하지 않았습니다. [무료 공유 연결 설정 안내](CLOUD-SETUP.md)를 확인하세요.
+**현재 main은 1.1.0-rc.3 Google 로그인·PC 공유 연결 준비 버전입니다.** 프로젝트 waitinglist-da493의 공개 Firebase 앱 설정과 데스크톱 OAuth 클라이언트 ID를 포함합니다. 새 PC에서 OAuth JSON을 선택할 필요 없이 기본 브라우저의 Google 로그인으로 연결합니다. 관리자는 최초 서버 접속 규칙 게시·Google 로그인 활성화·localhost 승인과 직원 계정 등록을 완료해야 합니다. 기존 JSON을 등록한 PC의 연결 설정은 유지합니다. 실제 계정 로그인과 서버 규칙 배포는 아직 확인하지 않았습니다. [무료 공유 연결 설정 안내](CLOUD-SETUP.md)를 확인하세요.
 
-[공유 연결 준비 설치파일](https://github.com/dongkyu-lab/WAITINGLIST/releases/tag/desktop-v1.1.0-rc.2) · [기존 로컬 버전 1.0.3](https://github.com/dongkyu-lab/WAITINGLIST/releases/tag/desktop-v1.0.3)
+[공유 연결 준비 설치파일](https://github.com/dongkyu-lab/WAITINGLIST/releases/tag/desktop-v1.1.0-rc.3) · [기존 로컬 버전 1.0.3](https://github.com/dongkyu-lab/WAITINGLIST/releases/tag/desktop-v1.0.3)
 
-현재 RC2는 [Windows CI 39214171134](https://github.com/dongkyu-lab/WAITINGLIST/actions/runs/39214171134)에서 공식 에뮬레이터·Windows 실행·설치파일·패키지 로그인 차단 검사를 통과했습니다. 게시된 설치파일 전체 다운로드의 SHA256과 Windows 실행파일 형식도 확인했습니다. 실제 Google 로그인과 PC 공유는 사용자 PC의 OAuth JSON 등록 및 서버 규칙 게시 후 확인해야 합니다.
+RC3는 JSON 없는 브라우저 인증 전달, 로그인 전 API 차단, 기존 로컬 데이터 보존을 검사합니다. 실제 Google 계정 승인과 여러 사용자 PC의 공유 확인은 사용자 환경에서 별도로 진행해야 합니다.
 
 ## Windows 설치
 
@@ -14,7 +14,7 @@ Windows 10/11 64비트용입니다. 일반 사용자는 Setup.exe만으로 설�
 
 ## 기능
 
-- 기본 브라우저의 Google 로그인: OAuth PKCE·state·루프백 콜백. Google 비밀번호를 앱에 입력·저장하지 않습니다.
+- 기본 브라우저의 Firebase Google 로그인: 새 PC에서 JSON 등록 없이 사용합니다. 인증 결과는 일회용 로컬 연결로 전달하며 프로그램이 Google 계정과 공유 권한을 검증합니다. 기존 JSON 방식의 PKCE·state 인증도 유지합니다. Google 비밀번호를 앱에 입력·저장하지 않습니다.
 - Firestore로 업체·상품·메인키워드·시작일·메모·추가·삭제를 공유합니다. UI는 수신 내용을 약 5초마다 갱신합니다. 오래된 화면의 저장은 충돌을 표시합니다.
 - 관리자가 Google 이메일을 등록하며 미등록 계정은 차단합니다. 임의의 최초 로그인 사용자가 관리자가 되지 않습니다. 규칙에 지정한 이메일만 최초 관리자 공간을 만들 수 있습니다.
 - 원본 현재진행업체NEW!A1:G50만 로그인 시와 5분마다 읽습니다. 원본 특이사항은 비웁니다. 새 업체만 추가하고 기존 앱 수정·삭제는 유지합니다. 원본 시트에는 쓰지 않습니다.
