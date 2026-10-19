@@ -1,0 +1,11 @@
+{
+  "folders": [{ "path": "." }],
+  "settings": {
+    "files.exclude": { "**/node_modules": true, "**/dist": true },
+    "files.watcherExclude": { "**/data/**": true },
+    "remote.portsAttributes": {
+      "5173": { "label": "flow 실시간 개발 화면", "onAutoForward": "notify" },
+      "3000": { "label": "flow API", "onAutoForward": "silent" }
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "flow: API 서버",
+      "type": "shell",
+      "command": "npm run server",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "flow-api", "pattern": { "regexp": "^(?!)$" },
+        "background": { "activeOnStart": true, "beginsPattern": ".*", "endsPattern": "Flow server listening on 3000" }
+      },
+      "presentation": { "reveal": "always", "panel": "dedicated", "group": "flow" }
+    },
+    {
+      "label": "flow: 실시간 화면",
+      "type": "shell",
+      "command": "npm run dev -- --port 5173 --strictPort",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "flow-vite", "pattern": { "regexp": "^(?!)$" },
+        "background": { "activeOnStart": true, "beginsPattern": ".*", "endsPattern": "Local:.*5173" }
+      },
+      "presentation": { "reveal": "always", "panel": "dedicated", "group": "flow" }
+    },
+    {
+      "label": "flow: 개발 시작",
+      "dependsOn": ["flow: API 서버", "flow: 실시간 화면"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    }
+  ]
+}
