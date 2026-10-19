@@ -10,6 +10,12 @@ export function openStore(path) {
     CREATE TABLE IF NOT EXISTS notifications (slot TEXT PRIMARY KEY, payload TEXT NOT NULL, createdAt TEXT NOT NULL, readAt TEXT, mailState TEXT NOT NULL DEFAULT 'pending', attempts INTEGER NOT NULL DEFAULT 0, lastAttempt TEXT, error TEXT);
     CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, expires INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);`);
+  db.exec(`CREATE TABLE IF NOT EXISTS sheet_sources (
+    sourceKey TEXT PRIMARY KEY,
+    companyId TEXT REFERENCES companies(id) ON DELETE SET NULL,
+    sourceName TEXT NOT NULL,
+    sourceStartDate TEXT NOT NULL
+  ); CREATE INDEX IF NOT EXISTS sheet_sources_name ON sheet_sources(sourceName);`);
   const columns=new Set(db.prepare('PRAGMA table_info(companies)').all().map(c=>c.name));
   if(!columns.has('mainKeyword')) db.exec("ALTER TABLE companies ADD COLUMN mainKeyword TEXT NOT NULL DEFAULT ''");
   if(!columns.has('existingEndDate')) db.exec("ALTER TABLE companies ADD COLUMN existingEndDate TEXT NOT NULL DEFAULT ''");

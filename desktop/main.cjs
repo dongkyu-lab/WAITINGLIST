@@ -2,12 +2,12 @@ const {app,BrowserWindow,Tray,Menu,nativeImage,ipcMain,dialog,shell}=require('el
 const {fork}=require('node:child_process');
 const {randomBytes,randomUUID}=require('node:crypto');
 const {join,basename}=require('node:path');
-const {existsSync,mkdirSync,mkdtempSync,readFileSync}=require('node:fs');
+const {existsSync,mkdirSync,mkdtempSync,readFileSync,writeFileSync}=require('node:fs');
 const {tmpdir}=require('node:os');
 
 const smoke=process.argv.includes('--smoke-test');
 const smokeDir=smoke?(process.env.WAITINGLIST_SMOKE_DATA||mkdtempSync(join(tmpdir(),'waitinglist-smoke-'))):null;
-if(smokeDir)app.setPath('userData',smokeDir);
+if(smokeDir){app.setPath('userData',smokeDir);writeFileSync(join(smokeDir,'sheet.json'),JSON.stringify([['플레이스 등 진행','연락처','시작날짜','종료날짜','마케팅 진행 상품','메인키워드','특이사항'],['자동 연결 검증업체','','26.10.01','','검증 상품','자동 키워드','가져오면 안 되는 원본 메모']]));}
 app.setName('Waiting List');
 app.setAppUserModelId('com.dongkyulab.waitinglist');
 const locked=app.requestSingleInstanceLock();
@@ -46,7 +46,7 @@ if(!locked){app.quit();}else{
       const timer=setTimeout(()=>reject(Error('데이터 서버가 시작되지 않았습니다.')),20000);
       child=fork(join(app.getAppPath(),'server','index.js'),[],{
         cwd:app.isPackaged?process.resourcesPath:app.getAppPath(),execPath:process.execPath,execArgv:['--use-env-proxy'],
-        env:{...process.env,ELECTRON_RUN_AS_NODE:'1',WAITINGLIST_DESKTOP:'1',WAITINGLIST_TOKEN:token,WAITINGLIST_DIST:join(app.getAppPath(),'dist'),APP_PASSWORD:'',NODE_ENV:'production',PORT:'0',DATABASE_PATH:dbPath()},
+        env:{...process.env,ELECTRON_RUN_AS_NODE:'1',WAITINGLIST_DESKTOP:'1',WAITINGLIST_TOKEN:token,WAITINGLIST_AUTO_SHEET:'1',WAITINGLIST_SMOKE_DATA:smokeDir||'',WAITINGLIST_SHEET_FIXTURE:smokeDir?join(smokeDir,'sheet.json'):'',WAITINGLIST_DIST:join(app.getAppPath(),'dist'),APP_PASSWORD:'',NODE_ENV:'production',PORT:'0',DATABASE_PATH:dbPath()},
         stdio:['ignore','pipe','pipe','ipc'],windowsHide:true
       });
       child.stdout.on('data',data=>console.log(String(data).trim()));
@@ -69,16 +69,18 @@ if(!locked){app.quit();}else{
   async function runSmoke(){
     const headers={'Authorization':`Bearer ${token}`,'Content-Type':'application/json'};
     const denied=await fetch(origin+'/api/companies');if(denied.status!==401)throw Error('Private desktop API is unprotected');
+    const auto=await(await fetch(origin+'/api/companies',{headers})).json();if(auto.sheetAuto.status!=='success'||auto.companies.length!==1||auto.companies[0].notes!=='')throw Error('Automatic sheet startup read failed');
     const response=await fetch(origin+'/api/companies',{method:'POST',headers,body:JSON.stringify({name:'설치 검증용 업체',startDate:'2026-10-19',mainKeyword:'검증 키워드',category:'검증 상품'})});
     if(response.status!==201)throw Error('Desktop create failed');
     const data=await(await fetch(origin+'/api/companies',{headers})).json();
-    if(data.companies.length!==1||data.companies[0].endDate!=='2026-11-18'||data.companies[0].mainKeyword!=='검증 키워드')throw Error('Desktop data workflow failed');
+    const created=data.companies.find(c=>c.name==='설치 검증용 업체');
+    if(data.companies.length!==2||created?.endDate!=='2026-11-18'||created?.mainKeyword!=='검증 키워드')throw Error('Desktop data workflow failed');
     const backupPath=join(smokeDir,'backup.sqlite');await requestBackup(backupPath);
     if(!readFileSync(backupPath).subarray(0,16).equals(Buffer.from('SQLite format 3\0')))throw Error('Backup is invalid');
     const page=await window.webContents.executeJavaScript(`new Promise(resolve=>{let attempts=0;const inspect=()=>{const state={title:document.title,bridge:!!window.waitingListDesktop,heading:document.querySelector('h1')?.textContent};if(state.heading||++attempts>=100)resolve(state);else setTimeout(inspect,100);};inspect();})`);
     if(!page.title.includes('Waiting List')||!page.bridge||!page.heading)throw Error('Desktop window did not render: '+JSON.stringify(page));
     window.close();if(window.isDestroyed()||!child.connected)throw Error('Closing the window stopped the background process');
-    show();console.log('DESKTOP_SMOKE_PASS: runtime SQLite, private API, derived dates, keywords, backup, isolated preload, window-to-tray behavior');
+    show();console.log('DESKTOP_SMOKE_PASS: automatic sheet startup import, excluded notes, runtime SQLite, private API, derived dates, keywords, backup, isolated preload, window-to-tray behavior');
     await quit();
   }
   app.on('second-instance',show);

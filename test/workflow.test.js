@@ -86,7 +86,7 @@ test('persistent notification slots prevent duplicates across restarts; due incl
 test('HTTP workflow: auth, CRUD, date recalculation, notes stripping, duplicates and persistence',async(t)=>{
   const dir=mkdtempSync(join(tmpdir(),'flow-test-'));
   const password='test-password-2026';
-  const child=spawn(process.execPath,['server/index.js'],{env:{...process.env,PORT:'3197',DATABASE_PATH:join(dir,'test.sqlite'),APP_PASSWORD:password,NODE_ENV:'production'},stdio:['ignore','pipe','pipe']});
+  const child=spawn(process.execPath,['server/index.js'],{env:{...process.env,WAITINGLIST_AUTO_SHEET:'0',PORT:'3197',DATABASE_PATH:join(dir,'test.sqlite'),APP_PASSWORD:password,NODE_ENV:'production'},stdio:['ignore','pipe','pipe']});
   t.after(async()=>{await stopProcess(child);rmSync(dir,{recursive:true,force:true,maxRetries:5,retryDelay:50});});
   let cookie='';
   async function request(path,method='GET',data,origin){
@@ -128,7 +128,7 @@ test('HTTP workflow: auth, CRUD, date recalculation, notes stripping, duplicates
 
 test('desktop API is private and online backup retains data without exposing its token',async(t)=>{
   const dir=mkdtempSync(join(tmpdir(),'flow-desktop-api-')),token=randomBytes(32).toString('hex');
-  const child=fork('server/index.js',[],{env:{...process.env,WAITINGLIST_DESKTOP:'1',WAITINGLIST_TOKEN:token,PORT:'0',DATABASE_PATH:join(dir,'main.sqlite'),NODE_ENV:'production',APP_PASSWORD:''},stdio:['ignore','ignore','pipe','ipc']});
+  const child=fork('server/index.js',[],{env:{...process.env,WAITINGLIST_AUTO_SHEET:'0',WAITINGLIST_DESKTOP:'1',WAITINGLIST_TOKEN:token,PORT:'0',DATABASE_PATH:join(dir,'main.sqlite'),NODE_ENV:'production',APP_PASSWORD:''},stdio:['ignore','ignore','pipe','ipc']});
   t.after(async()=>{await stopProcess(child);rmSync(dir,{recursive:true,force:true,maxRetries:5,retryDelay:50});});
   const port=await new Promise((resolve,reject)=>{
     child.on('message',m=>{if(m.type==='ready')resolve(m.port);});

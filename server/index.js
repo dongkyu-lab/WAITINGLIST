@@ -1,12 +1,12 @@
 import express from 'express';
-import { randomBytes, randomUUID, timingSafeEqual, createHash } from 'node:crypto';
+import { randomBytes, timingSafeEqual, createHash } from 'node:crypto';
 import { resolve } from 'node:path';
-import { existsSync } from 'node:fs';
-import Papa from 'papaparse';
+import { existsSync,readFileSync } from 'node:fs';
 import { openStore } from './store.js';
-import { validDate, addDays, koreaClock } from './dates.js';
+import { koreaClock } from './dates.js';
 import { createScheduler } from './scheduler.js';
-import { sanitizeSheetRows } from './sheet-data.js';
+import {cleanCompany,insertCompany as insertIntoDB} from './company-data.js';
+import {createAutoSheetReader,fetchSheetRows,rememberSheetDeletion} from './auto-sheet.js';
 
 const app=express(), production=process.env.NODE_ENV==='production';
 const desktop=process.env.WAITINGLIST_DESKTOP==='1';
@@ -16,6 +16,10 @@ const password=process.env.APP_PASSWORD;
 if(production && !desktop && (!password || password.length<12)) throw new Error('배포하려면 12자 이상의 APP_PASSWORD를 설정하세요.');
 const db=openStore(process.env.DATABASE_PATH||'data/flow.sqlite');
 const scheduler=createScheduler(db);
+const autoSheet=createAutoSheetReader(db,{
+  enabled:process.env.WAITINGLIST_AUTO_SHEET!=='0',
+  ...(process.env.WAITINGLIST_SMOKE_DATA&&process.env.WAITINGLIST_SHEET_FIXTURE?{fetchRows:async()=>JSON.parse(readFileSync(process.env.WAITINGLIST_SHEET_FIXTURE,'utf8'))}:{})
+});
 app.disable('x-powered-by');
 app.set('trust proxy', desktop?false:1);
 app.use((req,res,next)=>{
@@ -61,23 +65,8 @@ app.post('/api/logout',(req,res)=>{
   if(token) db.prepare('DELETE FROM sessions WHERE token=?').run(createHash('sha256').update(token).digest('hex'));
   res.setHeader('Set-Cookie','flow_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0'); res.json({ok:true});
 });
-function cleanCompany(input) {
-  const name=String(input.name||'').trim();
-  if(!name || name.length>150) throw new Error('업체명은 1~150자로 입력해 주세요.');
-  const startDate=String(input.startDate||'').trim();
-  if(startDate && !validDate(startDate)) throw new Error('시작일을 확인해 주세요.');
-  // End dates are computed exclusively by the server, including same-start edits.
-  const endDate=startDate?addDays(startDate,30):'';
-  const fields=Object.fromEntries(['category','mainKeyword','manager','contact','notes','existingEndDate'].map(k=>[k,String(input[k]||'').trim()]));
-  if(Object.values(fields).some(v=>v.length>5000)) throw new Error('입력값은 5,000자 이내로 작성해 주세요.');
-  return {name,startDate,endDate,...fields};
-}
-function insertCompany(c) {
-  const id=randomUUID(),now=new Date().toISOString();
-  db.prepare('INSERT INTO companies(id,name,category,mainKeyword,manager,contact,startDate,endDate,notes,existingEndDate,createdAt,updatedAt) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').run(id,c.name,c.category,c.mainKeyword,c.manager,c.contact,c.startDate,c.endDate,c.notes,c.existingEndDate,now,now);
-  return id;
-}
-app.get('/api/companies',(_,res)=>res.json({companies:db.prepare('SELECT * FROM companies ORDER BY endDate,name').all(),today:koreaClock().today}));
+const insertCompany=c=>insertIntoDB(db,c);
+app.get('/api/companies',(_,res)=>res.json({companies:db.prepare('SELECT * FROM companies ORDER BY endDate,name').all(),today:koreaClock().today,sheetAuto:autoSheet.status()}));
 app.post('/api/companies',(req,res)=>{const c=cleanCompany(req.body); const id=insertCompany(c);res.status(201).json({id});});
 app.put('/api/companies/:id',(req,res)=>{
   const old=db.prepare('SELECT * FROM companies WHERE id=?').get(req.params.id);
@@ -87,23 +76,16 @@ app.put('/api/companies/:id',(req,res)=>{
   db.prepare('UPDATE companies SET name=?,category=?,mainKeyword=?,manager=?,contact=?,startDate=?,endDate=?,notes=?,updatedAt=? WHERE id=?').run(c.name,c.category,c.mainKeyword,c.manager,c.contact,c.startDate,c.endDate,c.notes,new Date().toISOString(),old.id);
   res.json({ok:true});
 });
-app.delete('/api/companies/:id',(req,res)=>{db.prepare('DELETE FROM companies WHERE id=?').run(req.params.id);res.json({ok:true});});
+app.delete('/api/companies/:id',(req,res)=>{const c=db.prepare('SELECT * FROM companies WHERE id=?').get(req.params.id);if(c)rememberSheetDeletion(db,c);db.prepare('DELETE FROM companies WHERE id=?').run(req.params.id);res.json({ok:true});});
 app.get('/api/notifications',(_,res)=>res.json(db.prepare('SELECT * FROM notifications ORDER BY createdAt DESC LIMIT 90').all().map(n=>({...n,companies:JSON.parse(n.payload),payload:undefined}))));
 app.post('/api/notifications/read',(_,res)=>{db.prepare('UPDATE notifications SET readAt=? WHERE readAt IS NULL').run(new Date().toISOString());res.json({ok:true});});
-app.get('/api/settings',(_,res)=>res.json({timezone:'Asia/Seoul',hours:[9,12,15],channel:'in-app',lastImport:db.prepare("SELECT value FROM settings WHERE key='lastImport'").get()?.value||null,protected:Boolean(password),desktop}));
-const SHEET_URL='https://docs.google.com/spreadsheets/d/1r_XoTBynA9_oWg9D3dzg18a5V3s1tej7R_7sapnGwII/gviz/tq?'+new URLSearchParams({tqx:'out:csv',sheet:'현재진행업체NEW',range:'A1:G50'});
+app.get('/api/settings',(_,res)=>res.json({timezone:'Asia/Seoul',hours:[9,12,15],channel:'in-app',lastImport:db.prepare("SELECT value FROM settings WHERE key='lastImport'").get()?.value||null,protected:Boolean(password),desktop,sheetAuto:autoSheet.status()}));
 app.get('/api/sheet/preview',async(_,res)=>{
-  try {
-    const response=await fetch(SHEET_URL,{signal:AbortSignal.timeout(15000),redirect:'error'});
-    if(!response.ok) return res.status(502).json({error:'시트를 읽을 수 없습니다. 공유 권한 또는 네트워크 설정을 확인하거나 A1:G50 범위의 CSV를 업로드하세요.'});
-    const csv=await response.text();
-    if(csv.length>500000 || /^\s*</.test(csv)) throw new Error('invalid response');
-    const parsed=Papa.parse(csv,{skipEmptyLines:false});
-    if(parsed.errors.length) throw new Error('invalid csv');
-    // Drop notes values server-side before any client preview.
-    const rows=sanitizeSheetRows(parsed.data);
-    res.json({rows,source:'현재진행업체NEW!A1:G50'});
-  } catch { res.status(502).json({error:'Google Sheets 연결에 실패했습니다. A1:G50 범위의 CSV 파일로 가져올 수 있습니다.'}); }
+  try {res.json({rows:await fetchSheetRows(),source:'현재진행업체NEW!A1:G50'});}
+  catch {res.status(502).json({error:'Google Sheets 연결에 실패했습니다. 저장된 데이터는 유지됩니다.'});}
+});
+app.post('/api/sheet/read',async(_,res)=>{
+  const state=await autoSheet.read();res.status(state.status==='error'?502:200).json(state);
 });
 app.post('/api/import',(req,res)=>{
   const rows=req.body.companies;
@@ -130,6 +112,7 @@ scheduler.tick().catch(()=>console.error('알림 스케줄러 오류'));
 const server=app.listen(Number(process.env.PORT||3000),desktop?'127.0.0.1':'0.0.0.0',()=>{
   const port=server.address().port;
   console.log(`Flow server listening on ${port}`);
+  autoSheet.start();
   if(desktop && process.send)process.send({type:'ready',port});
 });
 if(desktop && process.send)process.on('message',message=>{
@@ -138,6 +121,6 @@ if(desktop && process.send)process.on('message',message=>{
   try {db.prepare('VACUUM INTO ?').run(message.path);process.send({type:'backup-result',id:message.id,ok:true});}
   catch {process.send({type:'backup-result',id:message.id,ok:false,error:'백업 파일을 만들지 못했습니다. 다른 이름과 위치로 다시 시도해 주세요.'});}
 });
-if(desktop)process.on('disconnect',()=>{clearInterval(timer);server.close(()=>{db.close();process.exit(0);});});
-function shutdown(){clearInterval(timer);server.close(()=>{db.close();process.exit(0);});}
+if(desktop)process.on('disconnect',shutdown);
+function shutdown(){autoSheet.stop();clearInterval(timer);server.close(()=>{db.close();process.exit(0);});}
 process.on('SIGTERM',shutdown);process.on('SIGINT',shutdown);
