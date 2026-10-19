@@ -10,7 +10,24 @@ permissions:
   contents: write
 
 jobs:
+  cloud-rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci --no-audit --no-fund
+      - name: Verify different Google accounts, Firestore rules and live sync
+        run: npm run test:cloud
   windows-installer:
+    needs: cloud-rules
     runs-on: windows-latest
     timeout-minutes: 25
     steps:
@@ -29,10 +46,14 @@ jobs:
         run: npm run build
       - name: Smoke test real Windows desktop runtime
         run: npm run desktop:smoke
+      - name: Verify Google login screen blocks access before authentication
+        run: npm run desktop:cloud-smoke
       - name: Build Windows x64 installer
         run: npx electron-builder --win nsis --x64 --publish never
       - name: Test packaged Windows app
         run: node scripts/packaged-smoke.cjs
+      - name: Test packaged Google login gate
+        run: node scripts/cloud-packaged-smoke.cjs
       - name: Compute installer SHA256
         shell: pwsh
         run: |
@@ -55,4 +76,8 @@ jobs:
         shell: pwsh
         run: |
           $assets = Get-ChildItem release/*-Setup.exe,release/*-Setup.exe.sha256 | ForEach-Object { $_.FullName }
-          gh release create $env:GITHUB_REF_NAME @assets --title "Waiting List $env:GITHUB_REF_NAME" --notes-file WINDOWS-RELEASE.md --latest
+          if ($env:GITHUB_REF_NAME -match '-rc\.') {
+            gh release create $env:GITHUB_REF_NAME @assets --title "Waiting List $env:GITHUB_REF_NAME" --notes-file WINDOWS-RELEASE.md --prerelease --latest=false
+          } else {
+            gh release create $env:GITHUB_REF_NAME @assets --title "Waiting List $env:GITHUB_REF_NAME" --notes-file WINDOWS-RELEASE.md --latest
+          }

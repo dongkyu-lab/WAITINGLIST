@@ -7,17 +7,21 @@ import { koreaClock } from './dates.js';
 import { createScheduler } from './scheduler.js';
 import {cleanCompany,insertCompany as insertIntoDB} from './company-data.js';
 import {createAutoSheetReader,fetchSheetRows,rememberSheetDeletion} from './auto-sheet.js';
+import {createCloudAPI} from './cloud-api.js';
+import {cloudError} from './firebase-workspace.js';
 
 const app=express(), production=process.env.NODE_ENV==='production';
 const desktop=process.env.WAITINGLIST_DESKTOP==='1';
+const cloudRequired=process.env.WAITINGLIST_REQUIRE_GOOGLE==='1';
 const desktopToken=process.env.WAITINGLIST_TOKEN;
 if(desktop && !/^[a-f0-9]{64}$/.test(desktopToken||'')) throw new Error('데스크톱 연결 키가 필요합니다.');
 const password=process.env.APP_PASSWORD;
 if(production && !desktop && (!password || password.length<12)) throw new Error('배포하려면 12자 이상의 APP_PASSWORD를 설정하세요.');
 const db=openStore(process.env.DATABASE_PATH||'data/flow.sqlite');
 const scheduler=createScheduler(db);
+const cloud=cloudRequired?createCloudAPI({legacyPath:process.env.DATABASE_PATH||'data/flow.sqlite',legacyStore:db}):null;
 const autoSheet=createAutoSheetReader(db,{
-  enabled:process.env.WAITINGLIST_AUTO_SHEET!=='0',
+  enabled:!cloudRequired&&process.env.WAITINGLIST_AUTO_SHEET!=='0',
   ...(process.env.WAITINGLIST_SMOKE_DATA&&process.env.WAITINGLIST_SHEET_FIXTURE?{fetchRows:async()=>JSON.parse(readFileSync(process.env.WAITINGLIST_SHEET_FIXTURE,'utf8'))}:{})
 });
 app.disable('x-powered-by');
@@ -38,6 +42,7 @@ app.use((req,res,next)=>{
 });
 app.use(express.json({limit:'1mb'}));
 app.get('/api/health',(_,res)=>res.json({ok:true}));
+if(cloud)app.use('/api',cloud.router);
 const tokenOf=req=>(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('flow_session='))?.slice(13);
 function loggedIn(req) {
   if(!password) return true;
@@ -107,20 +112,30 @@ app.use('/api',(_,res)=>res.status(404).json({error:'요청을 찾을 수 없습
 const dist=resolve(process.env.WAITINGLIST_DIST||'dist');
 if(existsSync(dist)) {app.use(express.static(dist));app.get('/{*path}',(_,res)=>res.sendFile(resolve(dist,'index.html')));}
 app.use((err,req,res,next)=>{res.status(400).json({error:err.message||'요청을 처리하지 못했습니다.'});});
-const timer=setInterval(()=>scheduler.tick().catch(()=>console.error('알림 스케줄러 오류')),15000);
-scheduler.tick().catch(()=>console.error('알림 스케줄러 오류'));
+const timer=cloud?null:setInterval(()=>scheduler.tick().catch(()=>console.error('알림 스케줄러 오류')),15000);
+if(!cloud)scheduler.tick().catch(()=>console.error('알림 스케줄러 오류'));
 const server=app.listen(Number(process.env.PORT||3000),desktop?'127.0.0.1':'0.0.0.0',()=>{
   const port=server.address().port;
   console.log(`Flow server listening on ${port}`);
   autoSheet.start();
   if(desktop && process.send)process.send({type:'ready',port});
 });
-if(desktop && process.send)process.on('message',message=>{
+if(desktop && process.send)process.on('message',async message=>{
   if(message.type==='shutdown'){shutdown();return;}
+  if(message.type?.startsWith('cloud-')&&typeof message.id==='string'){
+    try{
+      if(!cloud)throw Error('Google 로그인 모드가 아닙니다.');
+      const value=message.type==='cloud-configure'?await cloud.configure(message.config):message.type==='cloud-login'?await cloud.login(message.accessToken):message.type==='cloud-logout'?await cloud.logout():null;
+      if(!value)throw Error('지원하지 않는 요청입니다.');
+      process.send({type:'cloud-result',id:message.id,ok:true,value});
+    }catch(error){process.send({type:'cloud-result',id:message.id,ok:false,error:cloudError(error).message});}
+    return;
+  }
   if(message.type!=='backup'||typeof message.path!=='string'||typeof message.id!=='string')return;
-  try {db.prepare('VACUUM INTO ?').run(message.path);process.send({type:'backup-result',id:message.id,ok:true});}
+  try {if(cloud)cloud.backup(message.path);else db.prepare('VACUUM INTO ?').run(message.path);process.send({type:'backup-result',id:message.id,ok:true});}
   catch {process.send({type:'backup-result',id:message.id,ok:false,error:'백업 파일을 만들지 못했습니다. 다른 이름과 위치로 다시 시도해 주세요.'});}
 });
 if(desktop)process.on('disconnect',shutdown);
-function shutdown(){autoSheet.stop();clearInterval(timer);server.close(()=>{db.close();process.exit(0);});}
+let shuttingDown=false;
+async function shutdown(){if(shuttingDown)return;shuttingDown=true;autoSheet.stop();clearInterval(timer);await cloud?.close();server.close(()=>{db.close();process.exit(0);});}
 process.on('SIGTERM',shutdown);process.on('SIGINT',shutdown);

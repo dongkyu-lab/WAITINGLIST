@@ -4,3 +4,9 @@ dist/
 data/
 *.log
 release/
+.cloud-private/
+desktop/cloud-config.json
+*debug.log
+cloud/.cache/
+waitinglist-cloud.json
+client_secret*.json

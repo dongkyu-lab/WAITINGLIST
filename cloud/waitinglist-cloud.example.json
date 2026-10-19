@@ -1,0 +1,13 @@
+{
+  "firebase": {
+    "projectId": "YOUR_FIREBASE_PROJECT_ID",
+    "apiKey": "YOUR_FIREBASE_WEB_APP_API_KEY"
+  },
+  "google": {
+    "installed": {
+      "client_id": "YOUR_DESKTOP_OAUTH_CLIENT_ID.apps.googleusercontent.com",
+      "client_secret": "COPY_FROM_DOWNLOADED_DESKTOP_OAUTH_JSON"
+    }
+  },
+  "workspaceId": "waitinglist"
+}

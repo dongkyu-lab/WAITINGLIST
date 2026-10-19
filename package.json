@@ -1,6 +1,6 @@
 {
   "name": "waitinglist-studio",
-  "version": "1.0.3",
+  "version": "1.1.0-rc.1",
   "private": true,
   "type": "module",
   "engines": {
@@ -14,10 +14,13 @@
     "test": "node --test",
     "desktop": "electron .",
     "desktop:smoke": "node scripts/desktop-smoke.cjs",
-    "desktop:pack": "npm run build && electron-builder --win nsis --x64 --publish never"
+    "desktop:pack": "npm run build && electron-builder --win nsis --x64 --publish never",
+    "test:cloud": "node scripts/cloud-emulator-check.mjs",
+    "desktop:cloud-smoke": "node scripts/cloud-desktop-smoke.cjs"
   },
   "dependencies": {
     "express": "^5.1.0",
+    "firebase": "^13.0.0",
     "lucide-react": "^0.468.0",
     "papaparse": "^5.5.3",
     "react": "^19.0.0",

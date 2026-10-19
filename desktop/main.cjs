@@ -1,18 +1,21 @@
-const {app,BrowserWindow,Tray,Menu,nativeImage,ipcMain,dialog,shell}=require('electron');
+const {app,BrowserWindow,Tray,Menu,nativeImage,ipcMain,dialog,shell,safeStorage}=require('electron');
 const {fork}=require('node:child_process');
 const {randomBytes,randomUUID}=require('node:crypto');
 const {join,basename}=require('node:path');
 const {existsSync,mkdirSync,mkdtempSync,readFileSync,writeFileSync}=require('node:fs');
 const {tmpdir}=require('node:os');
+const {createGoogleLogin}=require('./google-login.cjs');
 
 const smoke=process.argv.includes('--smoke-test');
+const cloudSmoke=smoke&&process.argv.includes('--require-google-smoke');
 const smokeDir=smoke?(process.env.WAITINGLIST_SMOKE_DATA||mkdtempSync(join(tmpdir(),'waitinglist-smoke-'))):null;
 if(smokeDir){app.setPath('userData',smokeDir);writeFileSync(join(smokeDir,'sheet.json'),JSON.stringify([['플레이스 등 진행','연락처','시작날짜','종료날짜','마케팅 진행 상품','메인키워드','특이사항'],['자동 연결 검증업체','','26.10.01','','검증 상품','자동 키워드','가져오면 안 되는 원본 메모']]));}
 app.setName('Waiting List');
 app.setAppUserModelId('com.dongkyulab.waitinglist');
 const locked=app.requestSingleInstanceLock();
 if(!locked){app.quit();}else{
-  let window,tray,child,origin,quitting=false,backupBusy=false;
+  let window,tray,child,origin,quitting=false,backupBusy=false,cloudConfig=null,googleBusy=false;
+  const googleLogin=createGoogleLogin({openExternal:url=>shell.openExternal(url)});
   const token=randomBytes(32).toString('hex');
   const pending=new Map();
   const icon=()=>join(app.getAppPath(),'public','icons','icon-512.png');
@@ -30,7 +33,7 @@ if(!locked){app.quit();}else{
   async function quit(code=0){
     if(quitting)return;
     if(backupBusy&&!smoke){dialog.showMessageBox(window,{type:'info',message:'백업이 끝난 뒤 종료해 주세요.'});return;}
-    quitting=true;await stopBackend();tray?.destroy();
+    quitting=true;googleLogin.cancel();await stopBackend();tray?.destroy();
     app.exit(code);
   }
   function requestBackup(path){
@@ -40,13 +43,19 @@ if(!locked){app.quit();}else{
       child.send({type:'backup',id,path});
     });
   }
+  function requestCloud(type,payload={}){
+    return new Promise((resolve,reject)=>{
+      const id=randomUUID(),timer=setTimeout(()=>{pending.delete(id);reject(Error('공유 서버 응답 시간이 지났습니다. 로그인 상태를 다시 확인해 주세요.'));},60000);
+      pending.set(id,{resolve,reject,timer});child.send({type,id,...payload});
+    });
+  }
   async function startBackend(){
     mkdirSync(join(app.getPath('userData'),'data'),{recursive:true});
     return new Promise((resolve,reject)=>{
       const timer=setTimeout(()=>reject(Error('데이터 서버가 시작되지 않았습니다.')),20000);
       child=fork(join(app.getAppPath(),'server','index.js'),[],{
         cwd:app.isPackaged?process.resourcesPath:app.getAppPath(),execPath:process.execPath,execArgv:['--use-env-proxy'],
-        env:{...process.env,ELECTRON_RUN_AS_NODE:'1',WAITINGLIST_DESKTOP:'1',WAITINGLIST_TOKEN:token,WAITINGLIST_AUTO_SHEET:'1',WAITINGLIST_SMOKE_DATA:smokeDir||'',WAITINGLIST_SHEET_FIXTURE:smokeDir?join(smokeDir,'sheet.json'):'',WAITINGLIST_DIST:join(app.getAppPath(),'dist'),APP_PASSWORD:'',NODE_ENV:'production',PORT:'0',DATABASE_PATH:dbPath()},
+        env:{...process.env,ELECTRON_RUN_AS_NODE:'1',WAITINGLIST_DESKTOP:'1',WAITINGLIST_TOKEN:token,WAITINGLIST_REQUIRE_GOOGLE:smoke&&!cloudSmoke?'0':'1',WAITINGLIST_AUTO_SHEET:'1',WAITINGLIST_SMOKE_DATA:smokeDir||'',WAITINGLIST_SHEET_FIXTURE:smokeDir?join(smokeDir,'sheet.json'):'',WAITINGLIST_DIST:join(app.getAppPath(),'dist'),APP_PASSWORD:'',NODE_ENV:'production',PORT:'0',DATABASE_PATH:dbPath()},
         stdio:['ignore','pipe','pipe','ipc'],windowsHide:true
       });
       child.stdout.on('data',data=>console.log(String(data).trim()));
@@ -54,9 +63,9 @@ if(!locked){app.quit();}else{
       child.once('error',err=>{clearTimeout(timer);reject(err);});
       child.on('message',message=>{
         if(message.type==='ready'){clearTimeout(timer);origin=`http://127.0.0.1:${message.port}`;resolve();}
-        if(message.type==='backup-result'){
+        if(message.type==='backup-result'||message.type==='cloud-result'){
           const item=pending.get(message.id);if(!item)return;clearTimeout(item.timer);pending.delete(message.id);
-          if(message.ok)item.resolve({ok:true});else item.reject(Error(message.error));
+          if(message.ok)item.resolve(message.value||{ok:true});else item.reject(Error(message.error));
         }
       });
       child.once('exit',()=>{
@@ -69,6 +78,14 @@ if(!locked){app.quit();}else{
   async function runSmoke(){
     const headers={'Authorization':`Bearer ${token}`,'Content-Type':'application/json'};
     const denied=await fetch(origin+'/api/companies');if(denied.status!==401)throw Error('Private desktop API is unprotected');
+    if(cloudSmoke){
+      const state=await(await fetch(origin+'/api/auth',{headers})).json();
+      if(state.authenticated||state.provider!=='google')throw Error('Google login gate failed');
+      if((await fetch(origin+'/api/companies',{headers})).status!==401)throw Error('Company data leaked before Google login');
+      const page=await window.webContents.executeJavaScript(`new Promise(resolve=>{let attempts=0;const inspect=()=>{const h=document.querySelector('h1')?.textContent;if(h||++attempts>=100)resolve({h,button:document.querySelector('.google-sign-in')?.textContent});else setTimeout(inspect,100);};inspect();})`);
+      if(!page.h?.includes('Google')||!page.button?.includes('Google'))throw Error('Google login screen did not render');
+      console.log('CLOUD_DESKTOP_SMOKE_PASS: real Google login gate, denied data before login, account setup screen');await quit();return;
+    }
     const auto=await(await fetch(origin+'/api/companies',{headers})).json();if(auto.sheetAuto.status!=='success'||auto.companies.length!==1||auto.companies[0].notes!=='')throw Error('Automatic sheet startup read failed');
     const response=await fetch(origin+'/api/companies',{method:'POST',headers,body:JSON.stringify({name:'설치 검증용 업체',startDate:'2026-10-19',mainKeyword:'검증 키워드',category:'검증 상품'})});
     if(response.status!==201)throw Error('Desktop create failed');
@@ -89,6 +106,15 @@ if(!locked){app.quit();}else{
   app.on('before-quit',event=>{if(!quitting){event.preventDefault();quit();}});
   app.whenReady().then(async()=>{
     await startBackend();
+    if(!smoke){
+      const saved=join(app.getPath('userData'),'cloud-config.bin'),bundled=join(__dirname,'cloud-config.json');
+      try{
+        const {validateCloudConfig}=await import('../server/cloud-config.js');
+        if(existsSync(saved)&&safeStorage.isEncryptionAvailable())cloudConfig=validateCloudConfig(JSON.parse(safeStorage.decryptString(readFileSync(saved))));
+        else if(existsSync(bundled))cloudConfig=validateCloudConfig(JSON.parse(readFileSync(bundled,'utf8')));
+        if(cloudConfig)await requestCloud('cloud-configure',{config:cloudConfig});
+      }catch{cloudConfig=null;console.error('공유 연결 설정을 다시 등록해 주세요.');}
+    }
     window=new BrowserWindow({width:1440,height:960,minWidth:1050,minHeight:720,show:false,title:'Waiting List',icon:icon(),backgroundColor:'#f4f8f8',webPreferences:{preload:join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,partition:'waitinglist-desktop'}});
     window.removeMenu();
     window.webContents.session.webRequest.onBeforeSendHeaders({urls:[origin+'/*']},(details,callback)=>callback({requestHeaders:{...details.requestHeaders,Authorization:`Bearer ${token}`}}));
@@ -104,6 +130,24 @@ if(!locked){app.quit();}else{
     tray.setContextMenu(Menu.buildFromTemplate([{label:'Waiting List 열기',click:show},{type:'separator'},{label:'프로그램 종료',click:()=>quit()}]));
     tray.on('double-click',show);
     ipcMain.handle('desktop:info',()=>info());
+    ipcMain.handle('desktop:google-login',async()=>{
+      if(!cloudConfig)throw Error('먼저 공유 연결 설정파일을 등록해 주세요.');
+      if(googleBusy)throw Error('Google 로그인이 이미 진행 중입니다.');
+      googleBusy=true;try{const accessToken=await googleLogin.login(cloudConfig.google);return await requestCloud('cloud-login',{accessToken});}finally{googleBusy=false;}
+    });
+    ipcMain.handle('desktop:configure-cloud',async()=>{
+      if(googleBusy)throw Error('Google 로그인이 끝난 뒤 설정을 바꿔 주세요.');
+      const {canceled,filePaths}=await dialog.showOpenDialog(window,{title:'Waiting List 공유 연결 설정파일',filters:[{name:'공유 연결 설정',extensions:['json']}],properties:['openFile']});
+      if(canceled)return {canceled:true};
+      const raw=readFileSync(filePaths[0]);if(raw.length>20000)throw Error('20KB 이하의 공유 연결 설정파일을 선택해 주세요.');
+      const {validateCloudConfig}=await import('../server/cloud-config.js');
+      let parsed;try{parsed=JSON.parse(raw.toString('utf8'));}catch{throw Error('올바른 JSON 연결 설정파일이 아닙니다.');}
+      const config=validateCloudConfig(parsed);
+      if(!safeStorage.isEncryptionAvailable())throw Error('이 PC에서 연결 설정을 안전하게 저장할 수 없습니다. Windows 계정 보안 설정을 확인해 주세요.');
+      const status=await requestCloud('cloud-configure',{config});
+      writeFileSync(join(app.getPath('userData'),'cloud-config.bin'),safeStorage.encryptString(JSON.stringify(config)),{mode:0o600});cloudConfig=config;return status;
+    });
+    ipcMain.handle('desktop:cloud-guide',()=>shell.openExternal('https://github.com/dongkyu-lab/WAITINGLIST/blob/main/CLOUD-SETUP.md'));
     ipcMain.handle('desktop:auto-start',(_,value)=>{
       if(typeof value!=='boolean'||!info().canAutoStart)throw Error('윈도우 설치 버전에서 사용할 수 있습니다.');
       app.setLoginItemSettings({openAtLogin:value,args:['--background']});return info();

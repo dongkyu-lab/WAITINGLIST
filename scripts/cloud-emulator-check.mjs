@@ -1,0 +1,10 @@
+import {mkdtempSync,readFileSync,writeFileSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {spawn} from 'node:child_process';
+const directory=mkdtempSync(join(tmpdir(),'waitinglist-rules-'));
+writeFileSync(join(directory,'firestore.rules'),readFileSync(new URL('../cloud/firestore.rules',import.meta.url),'utf8').replace('SET_OWNER_EMAIL_BEFORE_DEPLOYING','owner@example.test'));
+const configuration=JSON.parse(readFileSync(new URL('../cloud/firebase.json',import.meta.url),'utf8'));writeFileSync(join(directory,'firebase.json'),JSON.stringify(configuration));
+const child=spawn(process.platform==='win32'?'npx.cmd':'npx',['--yes','firebase-tools@15.34.0','emulators:exec','--project','demo-waitinglist','--config',join(directory,'firebase.json'),'--only','auth,firestore','node --test test/firebase-sync.test.js'],{stdio:'inherit',shell:process.platform==='win32',env:{...process.env,WAITINGLIST_FIREBASE_EMULATOR_TEST:'1',FIREBASE_EMULATORS_PATH:process.env.FIREBASE_EMULATORS_PATH||join(tmpdir(),'waitinglist-firebase-cache'),XDG_CONFIG_HOME:process.env.XDG_CONFIG_HOME||join(tmpdir(),'waitinglist-firebase-config')}});
+child.on('error',error=>{console.error(error.message);rmSync(directory,{recursive:true,force:true});process.exitCode=1;});
+child.on('exit',code=>{rmSync(directory,{recursive:true,force:true});process.exitCode=code===0?0:1;});
