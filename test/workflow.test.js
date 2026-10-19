@@ -7,6 +7,8 @@ import { join } from 'node:path';
 import { addDays, daysLeft, statusFor, dueSlot, koreaClock } from '../server/dates.js';
 import { openStore } from '../server/store.js';
 import { createScheduler, notificationTargets } from '../server/scheduler.js';
+import { sanitizeSheetRows, inferSheetMapping, companiesFromRows, parseSheetDate } from '../server/sheet-data.js';
+import { DatabaseSync } from 'node:sqlite';
 
 test('30 calendar days across month, year and leap-day boundaries',()=>{
   assert.equal(addDays('2026-01-20',30),'2026-02-19');
@@ -15,11 +17,41 @@ test('30 calendar days across month, year and leap-day boundaries',()=>{
   assert.throws(()=>addDays('2026-02-30',30));
 });
 test('all status boundaries include the end date and expire the following day',()=>{
+  assert.equal(daysLeft('','2026-10-19'),null);
+  assert.equal(statusFor('','2026-10-19'),'unset');
   for(const [days,status] of [[8,'active'],[7,'upcoming'],[6,'upcoming'],[5,'soon'],[4,'soon'],[3,'urgent'],[1,'urgent'],[0,'urgent'],[-1,'ended']]){
     const end=addDays('2026-10-19',days);
     assert.equal(daysLeft(end,'2026-10-19'),days);
     assert.equal(statusFor(end,'2026-10-19'),status);
   }
+});
+test('actual sheet headers and short dates import products and keywords, preserve old end date, exclude notes and limit range',()=>{
+  const rows=[['플레이스 등 진행','연락처 ','시작날짜 ','종료날짜 ','마케팅 진행 상품 ','메인키워드 ','특이사항 '],['테스트 업체','010','26.9.26','26. 10. 25','플레이스 + 큐레이션','제주 맛집\n제주 카페','가져오면 안 되는 값','H열 제외'],['날짜 미정','','','','블로그','키워드','원본 메모']];
+  const clean=sanitizeSheetRows(rows),mapping=inferSheetMapping(clean);
+  assert.equal(clean[1][6],'');assert.equal(clean[1].length,7);
+  const companies=companiesFromRows(clean,mapping);
+  assert.equal(companies[0].startDate,'2026-09-26');
+  assert.equal(companies[0].endDate,'2026-10-26');
+  assert.equal(companies[0].existingEndDate,'26. 10. 25');
+  assert.equal(companies[0].category,'플레이스 + 큐레이션');
+  assert.equal(companies[0].mainKeyword,'제주 맛집\n제주 카페');
+  assert.equal(companies[0].notes,'');assert.equal(companies[1].startDate,'');assert.equal(companies[1].endDate,'');
+  assert.equal(parseSheetDate('26.10.2'),'2026-10-02');
+  assert.throws(()=>parseSheetDate('26.2.30'));
+  assert.throws(()=>companiesFromRows(rows,{...mapping,mainKeyword:'6'}));
+  const many=[rows[0],...Array.from({length:60},(_,i)=>[String(i),'','26.10.19','','상품','키워드','원본'])];
+  assert.equal(companiesFromRows(many,inferSheetMapping(many)).length,49);
+});
+test('old databases migrate without losing notes or old end dates and migration repeats safely',()=>{
+  const dir=mkdtempSync(join(tmpdir(),'flow-migration-')),path=join(dir,'old.sqlite');
+  const legacy=new DatabaseSync(path);
+  legacy.exec("CREATE TABLE companies (id TEXT PRIMARY KEY,name TEXT,category TEXT,manager TEXT,contact TEXT,startDate TEXT,endDate TEXT,notes TEXT,createdAt TEXT,updatedAt TEXT)");
+  legacy.prepare('INSERT INTO companies VALUES(?,?,?,?,?,?,?,?,?,?)').run('legacy','기존 업체','상품','팀','','2026-10-01','2026-12-31','기존 작성 메모','now','old');
+  legacy.close();
+  let db=openStore(path),c=db.prepare('SELECT * FROM companies').get();
+  assert.equal(c.endDate,'2026-10-31');assert.equal(c.existingEndDate,'2026-12-31');assert.equal(c.notes,'기존 작성 메모');assert.equal(c.mainKeyword,'');
+  db.close();db=openStore(path);c=db.prepare('SELECT * FROM companies').get();
+  assert.equal(c.existingEndDate,'2026-12-31');db.close();rmSync(dir,{recursive:true,force:true});
 });
 test('schedule uses Seoul time, three hours only, including UTC date rollover',()=>{
   assert.deepEqual(koreaClock(new Date('2026-10-18T15:01:00Z')),{today:'2026-10-19',hour:0,minute:1});
@@ -30,7 +62,7 @@ test('schedule uses Seoul time, three hours only, including UTC date rollover',(
 });
 test('persistent notification slots prevent duplicates across restarts; due includes zero and excludes expired',async()=>{
   const db=openStore(':memory:');
-  const input=[{id:'due',name:'테스트 업체',endDate:'2026-10-19'},{id:'seven',name:'7일 업체',endDate:'2026-10-26'},{id:'expired',name:'종료 업체',endDate:'2026-10-18'},{id:'eight',name:'8일 업체',endDate:'2026-10-27'}];
+  const input=[{id:'due',name:'테스트 업체',endDate:'2026-10-19'},{id:'seven',name:'7일 업체',endDate:'2026-10-26'},{id:'expired',name:'종료 업체',endDate:'2026-10-18'},{id:'eight',name:'8일 업체',endDate:'2026-10-27'},{id:'unset',name:'날짜 없음',endDate:''}];
   assert.equal(notificationTargets(input,'2026-10-19').length,2);
   for(const c of input)db.prepare('INSERT INTO companies(id,name,startDate,endDate,createdAt,updatedAt) VALUES(?,?,?,?,?,?)').run(c.id,c.name,'2026-09-19',c.endDate,'now','now');
   await createScheduler(db).tick(new Date('2026-10-19T00:00:00Z'));
@@ -60,10 +92,17 @@ test('HTTP workflow: auth, CRUD, date recalculation, notes stripping, duplicates
   assert.equal((await request('/login','POST',{password:'incorrect'})).status,401);
   assert.equal((await request('/login','POST',{password})).status,200);
   assert.equal((await request('/companies','POST',{name:'bad'},'https://evil.example')).status,403);
-  const created=await request('/companies','POST',{name:'통합 테스트',startDate:'2026-10-19',notes:'직접 쓴 메모'});
+  const created=await request('/companies','POST',{name:'통합 테스트',startDate:'2026-10-19',category:'블로그',mainKeyword:'제주 맛집',notes:'직접 쓴 메모'});
   assert.equal(created.status,201);
   let c=(await request('/companies')).body.companies[0];
   assert.equal(c.endDate,'2026-11-18');assert.equal(c.notes,'직접 쓴 메모');
+  assert.equal(c.mainKeyword,'제주 맛집');assert.equal(c.category,'블로그');
+  assert.equal((await request('/companies/'+c.id,'PUT',{...c,endDate:'2099-12-31'})).status,200);
+  c=(await request('/companies')).body.companies[0];assert.equal(c.endDate,'2026-11-18');
+  assert.equal((await request('/companies/'+c.id,'PUT',{...c,startDate:'2026-11-01'})).status,200);
+  c=(await request('/companies')).body.companies[0];assert.equal(c.endDate,'2026-12-01');
+  assert.equal((await request('/companies/'+c.id,'PUT',{...c,startDate:'',endDate:'2099-12-31',mainKeyword:'수정된 키워드'})).status,200);
+  c=(await request('/companies')).body.companies[0];assert.equal(c.endDate,'');assert.equal(c.mainKeyword,'수정된 키워드');
   assert.equal((await request('/companies/'+c.id,'PUT',{...c,startDate:'2026-11-01'})).status,200);
   c=(await request('/companies')).body.companies[0];assert.equal(c.endDate,'2026-12-01');
   assert.equal((await request('/companies/'+c.id,'PUT',{...c,updatedAt:'stale'})).status,409);

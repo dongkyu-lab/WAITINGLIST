@@ -6,6 +6,7 @@ import Papa from 'papaparse';
 import { openStore } from './store.js';
 import { validDate, addDays, koreaClock } from './dates.js';
 import { createScheduler } from './scheduler.js';
+import { sanitizeSheetRows } from './sheet-data.js';
 
 const app=express(), production=process.env.NODE_ENV==='production';
 const password=process.env.APP_PASSWORD;
@@ -17,7 +18,14 @@ app.set('trust proxy', 1);
 app.use((req,res,next)=>{
   res.set({'X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'same-origin'});
   if(req.path.startsWith('/api')) res.set('Cache-Control','no-store');
-  if(req.method!=='GET' && req.headers.origin && req.headers.origin!==`${req.protocol}://${req.get('host')}`) return res.status(403).json({error:'허용되지 않은 요청입니다.'});
+  const allowedOrigins=new Set([`${req.protocol}://${req.get('host')}`]);
+  // Vite proxies API requests from these local development origins.
+  // Never allow the extra origins in production.
+  if(!production) {
+    allowedOrigins.add('http://localhost:5173');
+    allowedOrigins.add('http://127.0.0.1:5173');
+  }
+  if(req.method!=='GET' && req.headers.origin && !allowedOrigins.has(req.headers.origin)) return res.status(403).json({error:'허용되지 않은 요청입니다.'});
   next();
 });
 app.use(express.json({limit:'1mb'}));
@@ -49,20 +57,20 @@ app.post('/api/logout',(req,res)=>{
   if(token) db.prepare('DELETE FROM sessions WHERE token=?').run(createHash('sha256').update(token).digest('hex'));
   res.setHeader('Set-Cookie','flow_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0'); res.json({ok:true});
 });
-function cleanCompany(input,existing=null) {
+function cleanCompany(input) {
   const name=String(input.name||'').trim();
   if(!name || name.length>150) throw new Error('업체명은 1~150자로 입력해 주세요.');
-  if(!validDate(input.startDate)) throw new Error('시작일을 확인해 주세요.');
-  // Always derive a new end date when the start date changes.
-  const endDate=existing && existing.startDate===input.startDate ? String(input.endDate||existing.endDate) : addDays(input.startDate,30);
-  if(!validDate(endDate)||endDate<input.startDate) throw new Error('종료일은 시작일 이후여야 합니다.');
-  const fields=Object.fromEntries(['category','manager','contact','notes'].map(k=>[k,String(input[k]||'').trim()]));
+  const startDate=String(input.startDate||'').trim();
+  if(startDate && !validDate(startDate)) throw new Error('시작일을 확인해 주세요.');
+  // End dates are computed exclusively by the server, including same-start edits.
+  const endDate=startDate?addDays(startDate,30):'';
+  const fields=Object.fromEntries(['category','mainKeyword','manager','contact','notes','existingEndDate'].map(k=>[k,String(input[k]||'').trim()]));
   if(Object.values(fields).some(v=>v.length>5000)) throw new Error('입력값은 5,000자 이내로 작성해 주세요.');
-  return {name,startDate:input.startDate,endDate,...fields};
+  return {name,startDate,endDate,...fields};
 }
 function insertCompany(c) {
   const id=randomUUID(),now=new Date().toISOString();
-  db.prepare('INSERT INTO companies(id,name,category,manager,contact,startDate,endDate,notes,createdAt,updatedAt) VALUES(?,?,?,?,?,?,?,?,?,?)').run(id,c.name,c.category,c.manager,c.contact,c.startDate,c.endDate,c.notes,now,now);
+  db.prepare('INSERT INTO companies(id,name,category,mainKeyword,manager,contact,startDate,endDate,notes,existingEndDate,createdAt,updatedAt) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').run(id,c.name,c.category,c.mainKeyword,c.manager,c.contact,c.startDate,c.endDate,c.notes,c.existingEndDate,now,now);
   return id;
 }
 app.get('/api/companies',(_,res)=>res.json({companies:db.prepare('SELECT * FROM companies ORDER BY endDate,name').all(),today:koreaClock().today}));
@@ -71,8 +79,8 @@ app.put('/api/companies/:id',(req,res)=>{
   const old=db.prepare('SELECT * FROM companies WHERE id=?').get(req.params.id);
   if(!old) return res.status(404).json({error:'업체를 찾을 수 없습니다.'});
   if(req.body.updatedAt!==old.updatedAt) return res.status(409).json({error:'다른 사용자가 수정했습니다. 창을 닫고 새로고침한 뒤 다시 수정해 주세요.'});
-  const c=cleanCompany(req.body,old);
-  db.prepare('UPDATE companies SET name=?,category=?,manager=?,contact=?,startDate=?,endDate=?,notes=?,updatedAt=? WHERE id=?').run(c.name,c.category,c.manager,c.contact,c.startDate,c.endDate,c.notes,new Date().toISOString(),old.id);
+  const c=cleanCompany(req.body);
+  db.prepare('UPDATE companies SET name=?,category=?,mainKeyword=?,manager=?,contact=?,startDate=?,endDate=?,notes=?,updatedAt=? WHERE id=?').run(c.name,c.category,c.mainKeyword,c.manager,c.contact,c.startDate,c.endDate,c.notes,new Date().toISOString(),old.id);
   res.json({ok:true});
 });
 app.delete('/api/companies/:id',(req,res)=>{db.prepare('DELETE FROM companies WHERE id=?').run(req.params.id);res.json({ok:true});});
@@ -89,9 +97,7 @@ app.get('/api/sheet/preview',async(_,res)=>{
     const parsed=Papa.parse(csv,{skipEmptyLines:false});
     if(parsed.errors.length) throw new Error('invalid csv');
     // Drop notes values server-side before any client preview.
-    const rows=parsed.data.slice(0,50).map(r=>r.slice(0,7));
-    const notes=rows[0]?.map((h,i)=>/특이|비고|메모/.test(h)?i:-1).filter(i=>i>=0)||[];
-    for(const row of rows.slice(1)) for(const i of notes) row[i]='';
+    const rows=sanitizeSheetRows(parsed.data);
     res.json({rows,source:'현재진행업체NEW!A1:G50'});
   } catch { res.status(502).json({error:'Google Sheets 연결에 실패했습니다. A1:G50 범위의 CSV 파일로 가져올 수 있습니다.'}); }
 });
