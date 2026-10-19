@@ -4,7 +4,7 @@
 
 ## 사용자가 설치하는 방법
 
-Windows 설치 빌드가 성공해 게시되면 [GitHub Releases](https://github.com/dongkyu-lab/WAITINGLIST/releases)에서 `WaitingList-1.0.0-Setup.exe`를 받습니다. ZIP 소스나 GitHub Actions의 개발자용 아티팩트를 받을 필요가 없습니다. Node.js, VS Code, 별도 서버 가입과 월 호스팅 요금 없이 설치 후 실행합니다. 코드 서명이 없는 설치파일이므로 게시자 확인 경고가 나올 수 있습니다. 보안 설정은 끄지 마세요.
+Windows 설치 빌드가 성공해 게시되면 [GitHub Releases](https://github.com/dongkyu-lab/WAITINGLIST/releases)에서 `WaitingList-1.0.1-Setup.exe`를 받습니다. ZIP 소스나 GitHub Actions의 개발자용 아티팩트를 받을 필요가 없습니다. Node.js, VS Code, 별도 서버 가입과 월 호스팅 요금 없이 설치 후 실행합니다. 코드 서명이 없는 설치파일이므로 게시자 확인 경고가 나올 수 있습니다. 보안 설정은 끄지 마세요.
 
 실제 Windows 설치·실행 검증 상태는 해당 Release와 빌드 결과를 확인하세요. 이 문서 자체는 파일 게시나 사용자 PC 설치가 끝났다는 증거가 아닙니다.
 

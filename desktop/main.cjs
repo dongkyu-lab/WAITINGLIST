@@ -2,11 +2,11 @@ const {app,BrowserWindow,Tray,Menu,nativeImage,ipcMain,dialog,shell}=require('el
 const {fork}=require('node:child_process');
 const {randomBytes,randomUUID}=require('node:crypto');
 const {join,basename}=require('node:path');
-const {existsSync,mkdirSync,mkdtempSync,readFileSync,rmSync}=require('node:fs');
+const {existsSync,mkdirSync,mkdtempSync,readFileSync}=require('node:fs');
 const {tmpdir}=require('node:os');
 
 const smoke=process.argv.includes('--smoke-test');
-const smokeDir=smoke?mkdtempSync(join(tmpdir(),'waitinglist-smoke-')):null;
+const smokeDir=smoke?(process.env.WAITINGLIST_SMOKE_DATA||mkdtempSync(join(tmpdir(),'waitinglist-smoke-'))):null;
 if(smokeDir)app.setPath('userData',smokeDir);
 app.setName('Waiting List');
 app.setAppUserModelId('com.dongkyulab.waitinglist');
@@ -31,7 +31,6 @@ if(!locked){app.quit();}else{
     if(quitting)return;
     if(backupBusy&&!smoke){dialog.showMessageBox(window,{type:'info',message:'백업이 끝난 뒤 종료해 주세요.'});return;}
     quitting=true;await stopBackend();tray?.destroy();
-    if(smokeDir)rmSync(smokeDir,{recursive:true,force:true});
     app.exit(code);
   }
   function requestBackup(path){
