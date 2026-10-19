@@ -4,7 +4,7 @@
 
 [공유 연결 준비 설치파일](https://github.com/dongkyu-lab/WAITINGLIST/releases/tag/desktop-v1.1.0-rc.2) · [기존 로컬 버전 1.0.3](https://github.com/dongkyu-lab/WAITINGLIST/releases/tag/desktop-v1.0.3)
 
-이전 RC의 공식 에뮬레이터·Windows 검증은 [39210493319](https://github.com/dongkyu-lab/WAITINGLIST/actions/runs/39210493319)에서 확인할 수 있습니다. 현재 버전의 Windows 검증 결과는 [워크플로](https://github.com/dongkyu-lab/WAITINGLIST/actions/workflows/windows-desktop.yml)를 확인하세요. 실제 Google 로그인은 사용자 PC의 OAuth JSON 등록과 서버 규칙 게시 후 확인해야 합니다.
+현재 RC2는 [Windows CI 39214171134](https://github.com/dongkyu-lab/WAITINGLIST/actions/runs/39214171134)에서 공식 에뮬레이터·Windows 실행·설치파일·패키지 로그인 차단 검사를 통과했습니다. 게시된 설치파일 전체 다운로드의 SHA256과 Windows 실행파일 형식도 확인했습니다. 실제 Google 로그인과 PC 공유는 사용자 PC의 OAuth JSON 등록 및 서버 규칙 게시 후 확인해야 합니다.
 
 ## Windows 설치
 
