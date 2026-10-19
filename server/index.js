@@ -119,6 +119,10 @@ app.post('/api/import',(req,res)=>{
 });
 app.use('/api',(_,res)=>res.status(404).json({error:'요청을 찾을 수 없습니다.'}));
 const dist=resolve('dist');
+app.get('/sw.js',(_,res)=>{
+  res.set({'Cache-Control':'no-cache','Service-Worker-Allowed':'/','Content-Type':'application/javascript'});
+  res.sendFile(resolve(dist,'sw.js'));
+});
 if(existsSync(dist)) {app.use(express.static(dist));app.get('/{*path}',(_,res)=>res.sendFile(resolve(dist,'index.html')));}
 app.use((err,req,res,next)=>{res.status(400).json({error:err.message||'요청을 처리하지 못했습니다.'});});
 const timer=setInterval(()=>scheduler.tick().catch(()=>console.error('알림 스케줄러 오류')),15000);
