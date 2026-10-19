@@ -11,7 +11,10 @@
     "server": "node --use-env-proxy --env-file-if-exists=.env server/index.js",
     "build": "vite build",
     "start": "NODE_ENV=production node --use-env-proxy --env-file-if-exists=.env server/index.js",
-    "test": "node --test"
+    "test": "node --test",
+    "desktop": "electron .",
+    "desktop:smoke": "node scripts/desktop-smoke.cjs",
+    "desktop:pack": "npm run build && electron-builder --win nsis --x64 --publish never"
   },
   "dependencies": {
     "express": "^5.1.0",
@@ -21,6 +24,12 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "electron": "^44.9.0",
+    "electron-builder": "^26.15.3",
     "vite": "^6.1.0"
-  }
+  },
+  "description": "Windows desktop marketing partner manager",
+  "main": "desktop/main.cjs",
+  "author": "dongkyu-lab",
+  "license": "UNLICENSED"
 }

@@ -9,13 +9,17 @@ import { createScheduler } from './scheduler.js';
 import { sanitizeSheetRows } from './sheet-data.js';
 
 const app=express(), production=process.env.NODE_ENV==='production';
+const desktop=process.env.WAITINGLIST_DESKTOP==='1';
+const desktopToken=process.env.WAITINGLIST_TOKEN;
+if(desktop && !/^[a-f0-9]{64}$/.test(desktopToken||'')) throw new Error('데스크톱 연결 키가 필요합니다.');
 const password=process.env.APP_PASSWORD;
-if(production && (!password || password.length<12)) throw new Error('배포하려면 12자 이상의 APP_PASSWORD를 설정하세요.');
+if(production && !desktop && (!password || password.length<12)) throw new Error('배포하려면 12자 이상의 APP_PASSWORD를 설정하세요.');
 const db=openStore(process.env.DATABASE_PATH||'data/flow.sqlite');
 const scheduler=createScheduler(db);
 app.disable('x-powered-by');
-app.set('trust proxy', 1);
+app.set('trust proxy', desktop?false:1);
 app.use((req,res,next)=>{
+  if(desktop && req.get('authorization')!==`Bearer ${desktopToken}`) return res.status(401).json({error:'프로그램에서만 접근할 수 있습니다.'});
   res.set({'X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'same-origin'});
   if(req.path.startsWith('/api')) res.set('Cache-Control','no-store');
   const allowedOrigins=new Set([`${req.protocol}://${req.get('host')}`]);
@@ -86,7 +90,7 @@ app.put('/api/companies/:id',(req,res)=>{
 app.delete('/api/companies/:id',(req,res)=>{db.prepare('DELETE FROM companies WHERE id=?').run(req.params.id);res.json({ok:true});});
 app.get('/api/notifications',(_,res)=>res.json(db.prepare('SELECT * FROM notifications ORDER BY createdAt DESC LIMIT 90').all().map(n=>({...n,companies:JSON.parse(n.payload),payload:undefined}))));
 app.post('/api/notifications/read',(_,res)=>{db.prepare('UPDATE notifications SET readAt=? WHERE readAt IS NULL').run(new Date().toISOString());res.json({ok:true});});
-app.get('/api/settings',(_,res)=>res.json({timezone:'Asia/Seoul',hours:[9,12,15],channel:'in-app',lastImport:db.prepare("SELECT value FROM settings WHERE key='lastImport'").get()?.value||null,protected:Boolean(password)}));
+app.get('/api/settings',(_,res)=>res.json({timezone:'Asia/Seoul',hours:[9,12,15],channel:'in-app',lastImport:db.prepare("SELECT value FROM settings WHERE key='lastImport'").get()?.value||null,protected:Boolean(password),desktop}));
 const SHEET_URL='https://docs.google.com/spreadsheets/d/1r_XoTBynA9_oWg9D3dzg18a5V3s1tej7R_7sapnGwII/gviz/tq?'+new URLSearchParams({tqx:'out:csv',sheet:'현재진행업체NEW',range:'A1:G50'});
 app.get('/api/sheet/preview',async(_,res)=>{
   try {
@@ -118,15 +122,22 @@ app.post('/api/import',(req,res)=>{
   res.json({added,skipped});
 });
 app.use('/api',(_,res)=>res.status(404).json({error:'요청을 찾을 수 없습니다.'}));
-const dist=resolve('dist');
-app.get('/sw.js',(_,res)=>{
-  res.set({'Cache-Control':'no-cache','Service-Worker-Allowed':'/','Content-Type':'application/javascript'});
-  res.sendFile(resolve(dist,'sw.js'));
-});
+const dist=resolve(process.env.WAITINGLIST_DIST||'dist');
 if(existsSync(dist)) {app.use(express.static(dist));app.get('/{*path}',(_,res)=>res.sendFile(resolve(dist,'index.html')));}
 app.use((err,req,res,next)=>{res.status(400).json({error:err.message||'요청을 처리하지 못했습니다.'});});
 const timer=setInterval(()=>scheduler.tick().catch(()=>console.error('알림 스케줄러 오류')),15000);
 scheduler.tick().catch(()=>console.error('알림 스케줄러 오류'));
-const server=app.listen(Number(process.env.PORT||3000),'0.0.0.0',()=>console.log(`Flow server listening on ${process.env.PORT||3000}`));
+const server=app.listen(Number(process.env.PORT||3000),desktop?'127.0.0.1':'0.0.0.0',()=>{
+  const port=server.address().port;
+  console.log(`Flow server listening on ${port}`);
+  if(desktop && process.send)process.send({type:'ready',port});
+});
+if(desktop && process.send)process.on('message',message=>{
+  if(message.type==='shutdown'){shutdown();return;}
+  if(message.type!=='backup'||typeof message.path!=='string'||typeof message.id!=='string')return;
+  try {db.prepare('VACUUM INTO ?').run(message.path);process.send({type:'backup-result',id:message.id,ok:true});}
+  catch {process.send({type:'backup-result',id:message.id,ok:false,error:'백업 파일을 만들지 못했습니다. 다른 이름과 위치로 다시 시도해 주세요.'});}
+});
+if(desktop)process.on('disconnect',()=>{clearInterval(timer);server.close(()=>{db.close();process.exit(0);});});
 function shutdown(){clearInterval(timer);server.close(()=>{db.close();process.exit(0);});}
 process.on('SIGTERM',shutdown);process.on('SIGINT',shutdown);

@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { spawn, fork } from 'node:child_process';
+import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
+import {randomBytes} from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { addDays, daysLeft, statusFor, dueSlot, koreaClock } from '../server/dates.js';
@@ -9,6 +10,12 @@ import { openStore } from '../server/store.js';
 import { createScheduler, notificationTargets } from '../server/scheduler.js';
 import { sanitizeSheetRows, inferSheetMapping, companiesFromRows, parseSheetDate } from '../server/sheet-data.js';
 import { DatabaseSync } from 'node:sqlite';
+
+async function stopProcess(child) {
+  if(child.exitCode!==null)return;
+  const exited=new Promise(resolve=>child.once('exit',resolve));
+  child.kill();await exited;
+}
 
 test('30 calendar days across month, year and leap-day boundaries',()=>{
   assert.equal(addDays('2026-01-20',30),'2026-02-19');
@@ -80,7 +87,7 @@ test('HTTP workflow: auth, CRUD, date recalculation, notes stripping, duplicates
   const dir=mkdtempSync(join(tmpdir(),'flow-test-'));
   const password='test-password-2026';
   const child=spawn(process.execPath,['server/index.js'],{env:{...process.env,PORT:'3197',DATABASE_PATH:join(dir,'test.sqlite'),APP_PASSWORD:password,NODE_ENV:'production'},stdio:['ignore','pipe','pipe']});
-  t.after(()=>{child.kill();rmSync(dir,{recursive:true,force:true});});
+  t.after(async()=>{await stopProcess(child);rmSync(dir,{recursive:true,force:true,maxRetries:5,retryDelay:50});});
   let cookie='';
   async function request(path,method='GET',data,origin){
     const r=await fetch('http://127.0.0.1:3197/api'+path,{method,headers:{'Content-Type':'application/json',...(cookie?{Cookie:cookie}:{}),...(origin?{Origin:origin}:{})},...(data?{body:JSON.stringify(data)}:{})});
@@ -117,4 +124,29 @@ test('HTTP workflow: auth, CRUD, date recalculation, notes stripping, duplicates
   assert.equal((await request('/companies/'+c.id,'DELETE')).status,200);
   assert.equal((await request('/companies')).body.companies.length,1);
   await request('/logout','POST');assert.equal((await request('/companies')).status,401);
+});
+
+test('desktop API is private and online backup retains data without exposing its token',async(t)=>{
+  const dir=mkdtempSync(join(tmpdir(),'flow-desktop-api-')),token=randomBytes(32).toString('hex');
+  const child=fork('server/index.js',[],{env:{...process.env,WAITINGLIST_DESKTOP:'1',WAITINGLIST_TOKEN:token,PORT:'0',DATABASE_PATH:join(dir,'main.sqlite'),NODE_ENV:'production',APP_PASSWORD:''},stdio:['ignore','ignore','pipe','ipc']});
+  t.after(async()=>{await stopProcess(child);rmSync(dir,{recursive:true,force:true,maxRetries:5,retryDelay:50});});
+  const port=await new Promise((resolve,reject)=>{
+    child.on('message',m=>{if(m.type==='ready')resolve(m.port);});
+    child.on('exit',code=>reject(Error('Desktop API exited '+code)));
+    setTimeout(()=>reject(Error('Desktop API startup timeout')),10000).unref();
+  });
+  const base=`http://127.0.0.1:${port}`,headers={Authorization:`Bearer ${token}`,'Content-Type':'application/json'};
+  assert.equal((await fetch(base+'/api/companies')).status,401);
+  const created=await fetch(base+'/api/companies',{method:'POST',headers,body:JSON.stringify({name:'로컬 프로그램 업체',startDate:'2026-10-19',notes:'백업할 메모'})});
+  assert.equal(created.status,201);
+  const state=await(await fetch(base+'/api/settings',{headers})).json();assert.equal(state.desktop,true);
+  const backup=join(dir,'backup.sqlite');
+  await new Promise((resolve,reject)=>{
+    child.on('message',m=>{if(m.type==='backup-result'&&m.id==='test-backup')m.ok?resolve():reject(Error(m.error));});
+    child.send({type:'backup',id:'test-backup',path:backup});
+    setTimeout(()=>reject(Error('Backup timeout')),10000).unref();
+  });
+  assert.equal(readFileSync(backup).subarray(0,16).toString(),'SQLite format 3\0');
+  const db=openStore(backup);assert.equal(db.prepare('SELECT notes FROM companies').get().notes,'백업할 메모');db.close();
+  const exited=new Promise(resolve=>child.once('exit',resolve));child.send({type:'shutdown'});assert.equal(await exited,0);
 });

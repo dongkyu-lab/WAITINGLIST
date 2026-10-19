@@ -1,0 +1,29 @@
+appId: com.dongkyulab.waitinglist
+productName: Waiting List
+asar: true
+directories:
+  output: release
+files:
+  - desktop/**/*
+  - server/**/*
+  - dist/**/*
+  - public/icons/**/*
+  - package.json
+  - '!**/*.log'
+  - '!**/data/**'
+  - '!**/.env*'
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: desktop/icon.ico
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  deleteAppDataOnUninstall: false
+  installerIcon: desktop/icon.ico
+  uninstallerIcon: desktop/icon.ico
+  artifactName: WaitingList-${version}-Setup.${ext}
