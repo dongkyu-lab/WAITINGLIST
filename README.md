@@ -4,6 +4,8 @@
 
 [공유 연결 준비 설치파일](https://github.com/dongkyu-lab/WAITINGLIST/releases/tag/desktop-v1.1.0-rc.1) · [기존 로컬 버전 1.0.3](https://github.com/dongkyu-lab/WAITINGLIST/releases/tag/desktop-v1.0.3)
 
+검증된 RC 설치파일: Windows CI [39210493319](https://github.com/dongkyu-lab/WAITINGLIST/actions/runs/39210493319)에서 공식 에뮬레이터 규칙·동기화 검사, Windows 실행·패키지·로그인 전 차단 검사가 통과했습니다. 게시된 설치파일 전체를 내려받아 SHA256과 실행파일 형식도 확인했습니다. 실제 Google 프로젝트 연결은 아직 완료되지 않았습니다.
+
 ## Windows 설치
 
 Windows 10/11 64비트용입니다. 일반 사용자는 Setup.exe만으로 설치하며 Node.js·VS Code·유료 서버 가입이 필요하지 않습니다. 관리자가 최초 Firebase 프로젝트·OAuth·규칙을 준비해야 합니다. 모든 PC가 같은 프로젝트와 공유 공간 설정을 사용합니다. 이전 프로그램은 트레이에서 완전히 종료한 뒤 설치합니다. 기존 로컬 DB는 보존하며 새 공유 서버로 자동 업로드하지 않습니다.
