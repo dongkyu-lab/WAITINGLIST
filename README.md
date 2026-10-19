@@ -4,9 +4,9 @@
 
 ## 사용자가 설치하는 방법
 
-Windows 설치 빌드가 성공해 게시되면 [GitHub Releases](https://github.com/dongkyu-lab/WAITINGLIST/releases)에서 `WaitingList-1.0.1-Setup.exe`를 받습니다. ZIP 소스나 GitHub Actions의 개발자용 아티팩트를 받을 필요가 없습니다. Node.js, VS Code, 별도 서버 가입과 월 호스팅 요금 없이 설치 후 실행합니다. 코드 서명이 없는 설치파일이므로 게시자 확인 경고가 나올 수 있습니다. 보안 설정은 끄지 마세요.
+[Windows 설치파일 1.0.1 다운로드](https://github.com/dongkyu-lab/WAITINGLIST/releases/download/desktop-v1.0.1/WaitingList-1.0.1-Setup.exe) 또는 [GitHub Release](https://github.com/dongkyu-lab/WAITINGLIST/releases/tag/desktop-v1.0.1)에서 `WaitingList-1.0.1-Setup.exe`를 받습니다. ZIP 소스나 GitHub Actions의 개발자용 아티팩트를 받을 필요가 없습니다. Node.js, VS Code, 별도 서버 가입과 월 호스팅 요금 없이 설치 후 실행합니다. 코드 서명이 없는 설치파일이므로 게시자 확인 경고가 나올 수 있습니다. 보안 설정은 끄지 마세요.
 
-실제 Windows 설치·실행 검증 상태는 해당 Release와 빌드 결과를 확인하세요. 이 문서 자체는 파일 게시나 사용자 PC 설치가 끝났다는 증거가 아닙니다.
+2026-10-19 Windows CI에서 테스트 8개, Electron 실행, NSIS 설치파일 생성, 패키지 실행이 모두 통과했습니다. 게시된 설치파일을 내려받아 SHA256과 Windows 실행파일 형식도 확인했습니다. 사용자 PC에서 설치 마법사를 실제로 실행하는 단계는 아직 확인하지 않았습니다. [Windows 검증 결과](https://github.com/dongkyu-lab/WAITINGLIST/actions/runs/39203656712)
 
 처음 실행한 뒤 **시트 가져오기 → Google Sheets 읽기 → 열 연결 확인 → 확인 후 가져오기**를 선택합니다. 실제 업체 데이터와 비밀번호는 공개 저장소나 설치파일에 넣지 않습니다. Google Sheets 가져오기에는 인터넷이 필요합니다. 가져온 뒤 업체 조회·편집·알림 기록은 이 PC 안에서 처리합니다.
 
