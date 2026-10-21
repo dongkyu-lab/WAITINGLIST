@@ -6,10 +6,13 @@ import {cleanCompany} from './company-data.js';
 import {CloudError,normalizeEmail,validEmail} from './cloud-config.js';
 import {dueSlot,koreaClock,daysLeft} from './dates.js';
 import {notificationTargets} from './scheduler.js';
+import {sheetTarget,planSheetUpdates} from './sheet-review.js';
 
 export function cloudError(error){
   if(error instanceof CloudError)return error;
   const code=String(error?.code||'');
+  if(code==='auth/user-disabled')return new CloudError('이 Google 계정은 Firebase Authentication에서 사용 중지되어 있습니다. 프로젝트 관리자에게 사용자 차단 해제를 요청해 주세요.',401,'user-disabled');
+  if(code==='auth/network-request-failed')return new CloudError('Google 인증 서버에 연결하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.',503,'network');
   if(code.includes('permission-denied'))return new CloudError('등록된 Google 계정만 접속할 수 있습니다. 관리자에게 계정 등록을 요청해 주세요.',403,'permission-denied');
   if(code.includes('auth/'))return new CloudError('Google 로그인을 완료하지 못했습니다. 로그인 설정과 계정을 확인해 주세요.',401,'unauthenticated');
   return new CloudError('공유 서버에 연결하지 못했습니다. 저장 여부를 확인한 뒤 다시 시도해 주세요.');
@@ -35,7 +38,8 @@ export class FirebaseWorkspace {
       let member=await getDocFromServer(memberRef);
       if(!member.exists()){
         await runTransaction(this.db,async tx=>{
-          const workspace=doc(this.db,'workspaces',this.config.workspaceId),existing=await tx.get(workspace);
+          const workspace=doc(this.db,'workspaces',this.config.workspaceId);let existing;
+          try{existing=await tx.get(workspace);}catch(e){if(String(e.code).includes('permission-denied'))throw new CloudError(email+' 계정의 접속 권한을 확인하지 못했습니다. 관리자가 이 이메일을 등록한 뒤 접속 권한 다시 확인을 눌러주세요.',403,'not-registered');throw e;}
           if(existing.exists())throw new CloudError('관리자가 아직 등록하지 않은 Google 계정입니다.',403);
           tx.set(workspace,{ownerEmail:email,createdAt:serverTimestamp()});
           tx.set(memberRef,{email,role:'owner',createdAt:serverTimestamp()});
@@ -102,13 +106,32 @@ export class FirebaseWorkspace {
     });return {ok:true};
   }
   async importCompanies(input){
-    this.assertWritable();const incoming=[...new Map(input.map(c=>persisted({...c,notes:''})).map(c=>[seedId(c),c])).values()],counts=new Map();for(const c of incoming)counts.set(c.name,(counts.get(c.name)||0)+1);
-    const candidates=incoming.filter(c=>!this.documents.has(seedId(c))&&![...this.documents.values()].some(d=>(d.name===c.name&&d.startDate===c.startDate)||(counts.get(c.name)===1&&d.sourceName===c.name)));
+    this.assertWritable();const incoming=[...new Map(input.map(c=>persisted({...c,notes:''})).map(c=>[seedId(c),c])).values()];
+    const known=[...this.documents].map(([id,d])=>({...d,id}));
+    const candidates=incoming.filter(c=>!this.documents.has(seedId(c))&&!sheetTarget(c,incoming,known));
     if(!candidates.length)return {added:0,skipped:input.length,total:input.length};
     return runTransaction(this.db,async tx=>{
       const refs=candidates.map(c=>this.ref('companies/'+seedId(c))),existing=await Promise.all(refs.map(ref=>tx.get(ref)));let added=0;
       candidates.forEach((c,i)=>{if(existing[i].exists())return;tx.set(refs[i],{...c,version:1,deleted:false,sourceName:c.name,sourceStartDate:c.startDate,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});added++;});
       return {added,skipped:input.length-added,total:input.length};
+    });
+  }
+  async previewSheetUpdates(incoming,fields){
+    this.assertWritable();
+    const docs=await getDocsFromServer(collection(this.db,'workspaces',this.config.workspaceId,'companies'));
+    return planSheetUpdates(incoming,docs.docs.map(d=>({...d.data(),id:d.id,updatedAt:String(d.data().version)})),fields);
+  }
+  async applySheetUpdates(plans){
+    this.assertWritable();
+    return runTransaction(this.db,async tx=>{
+      const refs=plans.map(p=>this.ref('companies/'+p.id)),snapshots=await Promise.all(refs.map(r=>tx.get(r)));
+      const changes=plans.map((p,i)=>{
+        const old=snapshots[i].data();
+        if(!old||old.deleted||String(old.version)!==p.updatedAt)throw new CloudError('다른 PC에서 먼저 수정했습니다. 시트를 다시 새로고침해 주세요.',409,'conflict');
+        return {c:persisted({...old,...p.values}),old};
+      });
+      changes.forEach(({c,old},i)=>tx.update(refs[i],{...c,version:old.version+1,updatedAt:serverTimestamp()}));
+      return {updated:changes.length};
     });
   }
   async importLegacy(input){
@@ -131,7 +154,7 @@ export class FirebaseWorkspace {
   async addMember(value){
     this.assertWritable();if(this.profile.role!=='owner')throw new CloudError('관리자 권한이 필요합니다.',403);
     const email=normalizeEmail(value);if(!validEmail(email))throw new CloudError('올바른 Google 이메일 주소를 입력해 주세요.',400);
-    await runTransaction(this.db,async tx=>{const ref=this.ref('members/'+email),old=await tx.get(ref);if(old.exists())throw new CloudError('이미 등록된 계정입니다.',409);tx.set(ref,{email,role:'editor',createdAt:serverTimestamp()});});return {ok:true};
+    const alreadyRegistered=await runTransaction(this.db,async tx=>{const ref=this.ref('members/'+email),old=await tx.get(ref);if(old.exists())return true;tx.set(ref,{email,role:'editor',createdAt:serverTimestamp()});return false;});return {ok:true,alreadyRegistered};
   }
   async removeMember(value){
     this.assertWritable();if(this.profile.role!=='owner')throw new CloudError('관리자 권한이 필요합니다.',403);

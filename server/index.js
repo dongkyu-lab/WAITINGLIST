@@ -9,6 +9,8 @@ import {cleanCompany,insertCompany as insertIntoDB} from './company-data.js';
 import {createAutoSheetReader,fetchSheetRows,rememberSheetDeletion} from './auto-sheet.js';
 import {createCloudAPI} from './cloud-api.js';
 import {cloudError} from './firebase-workspace.js';
+import {createSheetReviewStore,localSheetCompanies,planSheetUpdates,sheetFields,applyLocalSheetUpdates} from './sheet-review.js';
+import {inferSheetMapping,companiesFromRows} from './sheet-data.js';
 
 const app=express(), production=process.env.NODE_ENV==='production';
 const desktop=process.env.WAITINGLIST_DESKTOP==='1';
@@ -24,6 +26,7 @@ const autoSheet=createAutoSheetReader(db,{
   enabled:!cloudRequired&&process.env.WAITINGLIST_AUTO_SHEET!=='0',
   ...(process.env.WAITINGLIST_SMOKE_DATA&&process.env.WAITINGLIST_SHEET_FIXTURE?{fetchRows:async()=>JSON.parse(readFileSync(process.env.WAITINGLIST_SHEET_FIXTURE,'utf8'))}:{})
 });
+const sheetReviews=createSheetReviewStore();
 app.disable('x-powered-by');
 app.set('trust proxy', desktop?false:1);
 app.use((req,res,next)=>{
@@ -90,8 +93,13 @@ app.get('/api/sheet/preview',async(_,res)=>{
   catch {res.status(502).json({error:'Google Sheets 연결에 실패했습니다. 저장된 데이터는 유지됩니다.'});}
 });
 app.post('/api/sheet/read',async(_,res)=>{
-  const state=await autoSheet.read();res.status(state.status==='error'?502:200).json(state);
+  const state=await autoSheet.read();
+  if(state.status==='error'){res.status(502).json(state);return;}
+  const rows=autoSheet.rows();
+  if(rows){const mapping=inferSheetMapping(rows);state.review=sheetReviews.create(planSheetUpdates(companiesFromRows(rows,mapping),localSheetCompanies(db),sheetFields(mapping)));}
+  res.json(state);
 });
+app.post('/api/sheet/apply',(req,res)=>{const result=applyLocalSheetUpdates(db,sheetReviews.select(req.body.reviewId,req.body.selected));sheetReviews.clear();res.json(result);});
 app.post('/api/import',(req,res)=>{
   const rows=req.body.companies;
   if(!Array.isArray(rows)||!rows.length||rows.length>49) return res.status(400).json({error:'헤더를 제외한 최대 49개 업체만 가져올 수 있습니다.'});
@@ -111,7 +119,7 @@ app.post('/api/import',(req,res)=>{
 app.use('/api',(_,res)=>res.status(404).json({error:'요청을 찾을 수 없습니다.'}));
 const dist=resolve(process.env.WAITINGLIST_DIST||'dist');
 if(existsSync(dist)) {app.use(express.static(dist));app.get('/{*path}',(_,res)=>res.sendFile(resolve(dist,'index.html')));}
-app.use((err,req,res,next)=>{res.status(400).json({error:err.message||'요청을 처리하지 못했습니다.'});});
+app.use((err,req,res,next)=>{res.status(err.status||400).json({error:err.message||'요청을 처리하지 못했습니다.'});});
 const timer=cloud?null:setInterval(()=>scheduler.tick().catch(()=>console.error('알림 스케줄러 오류')),15000);
 if(!cloud)scheduler.tick().catch(()=>console.error('알림 스케줄러 오류'));
 const server=app.listen(Number(process.env.PORT||3000),desktop?'127.0.0.1':'0.0.0.0',()=>{
@@ -128,7 +136,7 @@ if(desktop && process.send)process.on('message',async message=>{
       const value=message.type==='cloud-configure'?await cloud.configure(message.config):message.type==='cloud-login'?await cloud.login(message.accessToken):message.type==='cloud-logout'?await cloud.logout():null;
       if(!value)throw Error('지원하지 않는 요청입니다.');
       process.send({type:'cloud-result',id:message.id,ok:true,value});
-    }catch(error){process.send({type:'cloud-result',id:message.id,ok:false,error:cloudError(error).message});}
+    }catch(error){const e=cloudError(error);process.send({type:'cloud-result',id:message.id,ok:false,error:e.message,status:e.status,code:e.code});}
     return;
   }
   if(message.type!=='backup'||typeof message.path!=='string'||typeof message.id!=='string')return;

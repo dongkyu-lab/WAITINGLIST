@@ -14,6 +14,6 @@ test('desktop cloud mode denies legacy data and all management APIs until Google
   const headers={Authorization:'Bearer '+token,'Content-Type':'application/json'},base=`http://127.0.0.1:${port}/api`;
   const auth=await(await fetch(base+'/auth',{headers})).json();assert.equal(auth.provider,'google');assert.equal(auth.authenticated,false);assert.equal(auth.configured,false);
   for(const path of ['/companies','/notifications','/settings','/members','/legacy/preview'])assert.equal((await fetch(base+path,{headers})).status,401);
-  for(const path of ['/companies','/sheet/read','/import','/members','/legacy/import'])assert.equal((await fetch(base+path,{method:'POST',headers,body:'{}'})).status,401);
+  for(const path of ['/companies','/sheet/read','/sheet/apply','/import','/members','/legacy/import'])assert.equal((await fetch(base+path,{method:'POST',headers,body:'{}'})).status,401);
   assert.equal((await fetch(base+'/login',{method:'POST',headers,body:'{"password":"anything"}'})).status,405);
 });

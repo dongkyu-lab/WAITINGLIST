@@ -1,12 +1,14 @@
 import Papa from 'papaparse';
 import {sanitizeSheetRows,inferSheetMapping,companiesFromRows} from './sheet-data.js';
 import {cleanCompany,insertCompany} from './company-data.js';
+import {localSheetCompanies,sheetTarget} from './sheet-review.js';
 
 export const SHEET_URL='https://docs.google.com/spreadsheets/d/1r_XoTBynA9_oWg9D3dzg18a5V3s1tej7R_7sapnGwII/gviz/tq?'+new URLSearchParams({tqx:'out:csv',sheet:'현재진행업체NEW',range:'A1:G50'});
 const sourceKey=c=>JSON.stringify([c.name,c.startDate]);
 
 export async function fetchSheetRows(signal) {
-  const response=await fetch(SHEET_URL,{signal:signal?AbortSignal.any([signal,AbortSignal.timeout(15000)]):AbortSignal.timeout(15000),redirect:'error'});
+  const url=new URL(SHEET_URL);url.searchParams.set('_',Date.now()+'-'+Math.random().toString(36).slice(2));
+  const response=await fetch(url,{cache:'no-store',headers:{'Cache-Control':'no-cache','Pragma':'no-cache'},signal:signal?AbortSignal.any([signal,AbortSignal.timeout(15000)]):AbortSignal.timeout(15000),redirect:'error'});
   if(!response.ok)throw new Error('Google Sheets 응답 오류');
   const text=await response.text();
   if(text.length>500000||/^\s*</.test(text))throw new Error('시트 응답 형식 오류');
@@ -41,6 +43,7 @@ export function applySheetRows(db,input) {
           if(candidates.length===1)match=candidates[0];
         }
       }
+      if(!match&&!deleted){const target=sheetTarget(c,companies,localSheetCompanies(db));if(target)match={id:target.id};}
       const id=deleted?null:match?.id||insertCompany(db,c);
       db.prepare('INSERT INTO sheet_sources(sourceKey,companyId,sourceName,sourceStartDate) VALUES(?,?,?,?)').run(key,id,c.name,c.startDate);
       if(match||deleted)skipped++;else added++;
@@ -54,7 +57,7 @@ export function applySheetRows(db,input) {
 }
 
 export function createAutoSheetReader(db,{fetchRows=fetchSheetRows,enabled=true,intervalMs=300000}={}) {
-  let timer=null,inflight=null,controller=null,closed=false;
+  let timer=null,inflight=null,controller=null,closed=false,lastRows=null;
   const state={enabled,status:enabled?'idle':'disabled',lastAttempt:null,lastSuccess:db.prepare("SELECT value FROM settings WHERE key='sheetAutoLastSuccess'").get()?.value||null,error:null,result:null};
   async function read(){
     if(closed||!enabled)return {...state};
@@ -64,7 +67,7 @@ export function createAutoSheetReader(db,{fetchRows=fetchSheetRows,enabled=true,
       try {
         const rows=await fetchRows(controller.signal);
         if(closed)return {...state};
-        state.result=applySheetRows(db,rows);state.lastSuccess=new Date().toISOString();state.status='success';
+        state.result=applySheetRows(db,rows);lastRows=rows;state.lastSuccess=new Date().toISOString();state.status='success';
       } catch {
         if(!closed){state.status='error';state.error='시트에 연결하지 못했습니다. 저장된 데이터는 유지되며 5분 뒤 자동으로 다시 시도합니다.';}
       }finally{inflight=null;controller=null;}
@@ -73,7 +76,7 @@ export function createAutoSheetReader(db,{fetchRows=fetchSheetRows,enabled=true,
     return inflight;
   }
   return {
-    read,status:()=>({...state}),
+    read,status:()=>({...state}),rows:()=>lastRows,
     start(){if(timer||closed||!enabled)return;void read();timer=setInterval(read,intervalMs);timer.unref?.();},
     stop(){closed=true;clearInterval(timer);controller?.abort();}
   };

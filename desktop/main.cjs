@@ -6,6 +6,7 @@ const {existsSync,mkdirSync,mkdtempSync,readFileSync,writeFileSync,renameSync}=r
 const {tmpdir}=require('node:os');
 const {createGoogleLogin}=require('./google-login.cjs');
 const {createBrowserLogin}=require('./browser-login.cjs');
+const {createAccessRetry}=require('./access-retry.cjs');
 // Public app identifiers only. OAuth secrets and tokens are never bundled here.
 const projectDefaults=require('./project-defaults.json');
 
@@ -20,6 +21,7 @@ if(!locked){app.quit();}else{
   let window,tray,child,origin,quitting=false,backupBusy=false,cloudConfig=null,googleBusy=false;
   const googleLogin=createGoogleLogin({openExternal:url=>shell.openExternal(url)});
   const browserLogin=createBrowserLogin({openExternal:url=>shell.openExternal(url),assetsPath:join(app.getAppPath(),'dist','login')});
+  const accessRetry=createAccessRetry({connect:accessToken=>requestCloud('cloud-login',{accessToken})});
   const token=randomBytes(32).toString('hex');
   const pending=new Map();
   const icon=()=>join(app.getAppPath(),'public','icons','icon-512.png');
@@ -37,7 +39,7 @@ if(!locked){app.quit();}else{
   async function quit(code=0){
     if(quitting)return;
     if(backupBusy&&!smoke){dialog.showMessageBox(window,{type:'info',message:'백업이 끝난 뒤 종료해 주세요.'});return;}
-    quitting=true;googleLogin.cancel();browserLogin.cancel();await stopBackend();tray?.destroy();
+    quitting=true;accessRetry.clear();googleLogin.cancel();browserLogin.cancel();await stopBackend();tray?.destroy();
     app.exit(code);
   }
   function requestBackup(path){
@@ -69,7 +71,7 @@ if(!locked){app.quit();}else{
         if(message.type==='ready'){clearTimeout(timer);origin=`http://127.0.0.1:${message.port}`;resolve();}
         if(message.type==='backup-result'||message.type==='cloud-result'){
           const item=pending.get(message.id);if(!item)return;clearTimeout(item.timer);pending.delete(message.id);
-          if(message.ok)item.resolve(message.value||{ok:true});else item.reject(Error(message.error));
+          if(message.ok)item.resolve(message.value||{ok:true});else{const error=Error(message.error);error.status=message.status;error.code=message.code;item.reject(error);}
         }
       });
       child.once('exit',()=>{
@@ -90,7 +92,8 @@ if(!locked){app.quit();}else{
       const page=await window.webContents.executeJavaScript(`new Promise(resolve=>{let attempts=0;const inspect=()=>{const h=document.querySelector('h1')?.textContent;if(h||++attempts>=100)resolve({h,button:document.querySelector('.google-sign-in')?.textContent});else setTimeout(inspect,100);};inspect();})`);
       if(!page.h?.includes('Google')||!page.button?.includes('Google'))throw Error('Google login screen did not render');
       const setup=await window.webContents.executeJavaScript('window.waitingListDesktop.getCloudSetup()');
-      if(setup.projectId!==projectDefaults.firebase.projectId||!setup.oauthReady||setup.loginMode!=='browser')throw Error('JSON-free browser sign-in is not configured');
+      if(setup.projectId!==projectDefaults.firebase.projectId||!setup.oauthReady||setup.loginMode!=='browser'||setup.canRetryAccess)throw Error('JSON-free browser sign-in is not configured');
+      if(!await window.webContents.executeJavaScript('typeof window.waitingListDesktop.retryGoogleAccess === "function"'))throw Error('Access retry bridge missing');
       if(!readFileSync(join(app.getAppPath(),'dist','login','index.html'),'utf8').includes('Google 로그인'))throw Error('Browser login page missing');
       if(await window.webContents.executeJavaScript('document.querySelector(".google-sign-in").disabled'))throw Error('Google login requires a JSON file on a fresh PC');
       console.log('CLOUD_DESKTOP_SMOKE_PASS: Google login gate, denied data, JSON-free sign-in ready, packaged browser login page and access-rule template');await quit();return;
@@ -103,10 +106,20 @@ if(!locked){app.quit();}else{
     if(data.companies.length!==2||created?.endDate!=='2026-11-18'||created?.mainKeyword!=='검증 키워드')throw Error('Desktop data workflow failed');
     const backupPath=join(smokeDir,'backup.sqlite');await requestBackup(backupPath);
     if(!readFileSync(backupPath).subarray(0,16).equals(Buffer.from('SQLite format 3\0')))throw Error('Backup is invalid');
+    const source=auto.companies[0];
+    const edit=await fetch(origin+'/api/companies/'+source.id,{method:'PUT',headers,body:JSON.stringify({...source,notes:'직접 작성한 메모',manager:'앱 담당자'})});
+    if(!edit.ok)throw Error('Source memo setup failed');
+    const rows=JSON.parse(readFileSync(join(smokeDir,'sheet.json'),'utf8'));rows[1][2]='26.10.02';rows[1][5]='갱신 키워드';writeFileSync(join(smokeDir,'sheet.json'),JSON.stringify(rows));
+    const reviewed=await(await fetch(origin+'/api/sheet/read',{method:'POST',headers})).json();
+    if(reviewed.review?.changes?.length!==1)throw Error('Changed source fields were not detected');
+    const applied=await fetch(origin+'/api/sheet/apply',{method:'POST',headers,body:JSON.stringify({reviewId:reviewed.review.id,selected:[source.id]})});
+    if(!applied.ok)throw Error('Reviewed sheet update failed');
+    const result=await(await fetch(origin+'/api/companies',{headers})).json(),updated=result.companies.find(c=>c.id===source.id);
+    if(updated.endDate!=='2026-11-01'||updated.mainKeyword!=='갱신 키워드'||updated.notes!=='직접 작성한 메모'||updated.manager!=='앱 담당자')throw Error('Sheet refresh lost dates, keyword or app-only fields');
     const page=await window.webContents.executeJavaScript(`new Promise(resolve=>{let attempts=0;const inspect=()=>{const state={title:document.title,bridge:!!window.waitingListDesktop,heading:document.querySelector('h1')?.textContent};if(state.heading||++attempts>=100)resolve(state);else setTimeout(inspect,100);};inspect();})`);
     if(!page.title.includes('Waiting List')||!page.bridge||!page.heading)throw Error('Desktop window did not render: '+JSON.stringify(page));
     window.close();if(window.isDestroyed()||!child.connected)throw Error('Closing the window stopped the background process');
-    show();console.log('DESKTOP_SMOKE_PASS: automatic sheet startup import, excluded notes, runtime SQLite, private API, derived dates, keywords, backup, isolated preload, window-to-tray behavior');
+    show();console.log('DESKTOP_SMOKE_PASS: automatic sheet import, reviewed refresh of changed dates and keywords, preserved app memos/managers, runtime SQLite, private API, backup, isolated preload, window-to-tray behavior');
     await quit();
   }
   app.on('second-instance',show);
@@ -143,7 +156,7 @@ if(!locked){app.quit();}else{
     tray.setContextMenu(Menu.buildFromTemplate([{label:'Waiting List 열기',click:show},{type:'separator'},{label:'프로그램 종료',click:()=>quit()}]));
     tray.on('double-click',show);
     ipcMain.handle('desktop:info',()=>info());
-    ipcMain.handle('desktop:cloud-setup',()=>({projectId:cloudConfig?.firebase.projectId||projectDefaults.firebase.projectId,oauthReady:Boolean(cloudConfig),loginMode:cloudConfig?.google.client_secret?'native':'browser'}));
+    ipcMain.handle('desktop:cloud-setup',()=>({projectId:cloudConfig?.firebase.projectId||projectDefaults.firebase.projectId,oauthReady:Boolean(cloudConfig),loginMode:cloudConfig?.google.client_secret?'native':'browser',canRetryAccess:accessRetry.available()}));
     ipcMain.handle('desktop:oauth-clients',()=>shell.openExternal(`https://console.cloud.google.com/auth/clients?project=${projectDefaults.firebase.projectId}`));
     ipcMain.handle('desktop:auth-domains',()=>shell.openExternal(`https://console.firebase.google.com/project/${cloudConfig?.firebase.projectId||projectDefaults.firebase.projectId}/authentication/settings`));
     ipcMain.handle('desktop:copy-access-rules',async(_,email)=>{
@@ -157,10 +170,19 @@ if(!locked){app.quit();}else{
     ipcMain.handle('desktop:google-login',async()=>{
       if(!cloudConfig)throw Error('먼저 공유 연결 설정파일을 등록해 주세요.');
       if(googleBusy)throw Error('Google 로그인이 이미 진행 중입니다.');
-      googleBusy=true;try{const accessToken=cloudConfig.google.client_secret?await googleLogin.login(cloudConfig.google):await browserLogin.login(cloudConfig.firebase);return await requestCloud('cloud-login',{accessToken});}finally{googleBusy=false;}
+      googleBusy=true;accessRetry.clear();
+      try{
+        const accessToken=cloudConfig.google.client_secret?await googleLogin.login(cloudConfig.google):await browserLogin.login(cloudConfig.firebase);
+        accessRetry.remember(accessToken);return await accessRetry.retry();
+      }finally{googleBusy=false;}
+    });
+    ipcMain.handle('desktop:retry-google-access',async()=>{
+      if(googleBusy)throw Error('로그인 확인이 이미 진행 중입니다.');
+      googleBusy=true;try{return await accessRetry.retry();}finally{googleBusy=false;}
     });
     ipcMain.handle('desktop:configure-cloud',async()=>{
       if(googleBusy)throw Error('Google 로그인이 끝난 뒤 설정을 바꿔 주세요.');
+      accessRetry.clear();
       const {canceled,filePaths}=await dialog.showOpenDialog(window,{title:'Google에서 내려받은 데스크톱 OAuth JSON 선택',filters:[{name:'Google 데스크톱 OAuth / 공유 연결 설정',extensions:['json']}],properties:['openFile']});
       if(canceled)return {canceled:true};
       const raw=readFileSync(filePaths[0]);if(raw.length>20000)throw Error('20KB 이하의 공유 연결 설정파일을 선택해 주세요.');

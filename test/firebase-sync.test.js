@@ -1,5 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {mkdtempSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {createRequire} from 'node:module';
+import {createCloudAPI} from '../server/cloud-api.js';
+const {createAccessRetry}=createRequire(import.meta.url)('../desktop/access-retry.cjs');
 import {doc,setDoc,serverTimestamp,getDocFromServer,disableNetwork,enableNetwork} from 'firebase/firestore';
 import {FirebaseWorkspace} from '../server/firebase-workspace.js';
 const enabled=Boolean(process.env.WAITINGLIST_FIREBASE_EMULATOR_TEST);
@@ -17,6 +23,22 @@ test('real Firebase emulators: different Google accounts share data; rules, conf
   const owner=create();await owner.login(null,{googleIdToken:googleToken('owner@example.test')});assert.equal(owner.profile.role,'owner');
   await t.test('unregistered Google account cannot read shared company data',async()=>{
     const outsider=create();await assert.rejects(outsider.login(null,{googleIdToken:googleToken('outsider@example.test')}));assert.equal(outsider.profile,null);
+  });
+  await t.test('previously denied Google credentials work after administrator registration without another browser login',async()=>{
+    const directory=mkdtempSync(join(tmpdir(),'waitinglist-retry-'));
+    const api=createCloudAPI({legacyPath:join(directory,'old.sqlite'),fetchRows:async()=>[['업체명','연락처','시작날짜','종료날짜','상품','키워드','특이사항']],workspaceFactory:value=>{
+      const w=new FirebaseWorkspace(value,{emulator});const signIn=w.login.bind(w);w.login=credential=>signIn(null,{googleIdToken:credential});w.tick=async()=>{};clients.push(w);return w;
+    }});
+    const retry=createAccessRetry({connect:credential=>api.login(credential)});
+    try{
+      await api.configure({...config,google:{client_id:'123456-example.apps.googleusercontent.com'}});
+      retry.remember(googleToken('previously-denied@example.test'));
+      await assert.rejects(retry.retry(),e=>e.status===403);assert.equal(api.status().authenticated,false);
+      await owner.addMember('previously-denied@example.test');
+      assert.equal((await retry.retry()).authenticated,true);assert.equal(api.status().user.email,'previously-denied@example.test');
+      assert.equal((await owner.addMember('previously-denied@example.test')).alreadyRegistered,true);
+      await owner.removeMember('previously-denied@example.test');await waitFor(()=>!api.status().authenticated,'Revoked retried account remained authorized');
+    }finally{retry.clear();await api.close();rmSync(directory,{recursive:true,force:true,maxRetries:10,retryDelay:100});}
   });
   await owner.addMember('editor@example.test');
   const editor=create();await editor.login(null,{googleIdToken:googleToken('editor@example.test')});assert.equal(editor.profile.role,'editor');
@@ -44,6 +66,22 @@ test('real Firebase emulators: different Google accounts share data; rules, conf
     const current=owner.companies().find(c=>c.notes==='보존할 메모');await owner.remove(current.id,current);
     await waitFor(()=>!editor.companies().some(c=>c.id===current.id),'Delete did not sync');
     assert.equal((await owner.importCompanies(source)).added,0);assert.equal((await owner.importCompanies([{...source[0],startDate:'2026-10-02'}])).added,0);
+  });
+  await t.test('sheet refresh updates existing companies only after review, preserves memos and rejects concurrent changes atomically',async()=>{
+    const source=[{name:'시트 변경 확인 업체',startDate:'2026-10-01',category:'기존 상품',mainKeyword:'키워드',contact:'unique-contact'}];
+    await owner.importCompanies(source);await waitFor(()=>editor.companies().some(c=>c.name===source[0].name),'Review source did not sync');
+    let current=editor.companies().find(c=>c.name===source[0].name);await editor.update(current.id,{...current,notes:'직접 작성 메모',manager:'앱 담당자'});
+    const incoming=[{...source[0],startDate:'2026-10-05',category:'새 상품',notes:'수입 금지 메모'}],fields=['name','startDate','category','mainKeyword','contact'];
+    const plans=await owner.previewSheetUpdates(incoming,fields);assert.equal(plans.length,1);
+    await editor.applySheetUpdates(plans);await waitFor(()=>owner.companies().find(c=>c.id===current.id)?.category==='새 상품','Reviewed updates did not sync');
+    current=owner.companies().find(c=>c.id===current.id);assert.equal(current.endDate,'2026-11-04');assert.equal(current.notes,'직접 작성 메모');assert.equal(current.manager,'앱 담당자');
+    assert.deepEqual(await owner.previewSheetUpdates(incoming,fields),[]);
+    const stale=await owner.previewSheetUpdates([{...incoming[0],startDate:'2026-10-06'}],fields);
+    await owner.update(current.id,{...current,notes:'더 최근에 작성한 메모'});
+    await assert.rejects(editor.applySheetUpdates(stale),e=>e.status===409);
+    assert.equal(owner.companies().find(c=>c.id===current.id).startDate,'2026-10-05');
+    await owner.remove(current.id,owner.companies().find(c=>c.id===current.id));
+    assert.deepEqual(await owner.previewSheetUpdates(incoming,fields),[]);
   });
   await t.test('offline writes are blocked and reconnect restores the live view',async()=>{
     await disableNetwork(editor.db);await waitFor(()=>!editor.online,'Offline state not visible');

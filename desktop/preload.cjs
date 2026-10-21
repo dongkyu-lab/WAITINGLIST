@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('waitingListDesktop',{
   backup:()=>ipcRenderer.invoke('desktop:backup'),
   openDataFolder:()=>ipcRenderer.invoke('desktop:open-data-folder'),
   googleLogin:()=>ipcRenderer.invoke('desktop:google-login'),
+  retryGoogleAccess:()=>ipcRenderer.invoke('desktop:retry-google-access'),
   configureCloud:()=>ipcRenderer.invoke('desktop:configure-cloud'),
   getCloudSetup:()=>ipcRenderer.invoke('desktop:cloud-setup'),
   copyAccessRules:email=>ipcRenderer.invoke('desktop:copy-access-rules',email),
