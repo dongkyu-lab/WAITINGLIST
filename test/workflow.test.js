@@ -105,11 +105,11 @@ test('HTTP workflow: auth, CRUD, date recalculation, notes stripping, duplicates
   assert.equal(c.endDate,'2026-11-18');assert.equal(c.notes,'직접 쓴 메모');
   assert.equal(c.mainKeyword,'제주 맛집');assert.equal(c.category,'블로그');
   assert.equal((await request('/companies/'+c.id,'PUT',{...c,endDate:'2099-12-31'})).status,200);
-  c=(await request('/companies')).body.companies[0];assert.equal(c.endDate,'2026-11-18');
+  c=(await request('/companies')).body.companies[0];assert.equal(c.endDate,'2099-12-31');
   assert.equal((await request('/companies/'+c.id,'PUT',{...c,startDate:'2026-11-01'})).status,200);
   c=(await request('/companies')).body.companies[0];assert.equal(c.endDate,'2026-12-01');
   assert.equal((await request('/companies/'+c.id,'PUT',{...c,startDate:'',endDate:'2099-12-31',mainKeyword:'수정된 키워드'})).status,200);
-  c=(await request('/companies')).body.companies[0];assert.equal(c.endDate,'');assert.equal(c.mainKeyword,'수정된 키워드');
+  c=(await request('/companies')).body.companies[0];assert.equal(c.endDate,'2099-12-31');assert.equal(c.mainKeyword,'수정된 키워드');
   assert.equal((await request('/companies/'+c.id,'PUT',{...c,startDate:'2026-11-01'})).status,200);
   c=(await request('/companies')).body.companies[0];assert.equal(c.endDate,'2026-12-01');
   assert.equal((await request('/companies/'+c.id,'PUT',{...c,updatedAt:'stale'})).status,409);

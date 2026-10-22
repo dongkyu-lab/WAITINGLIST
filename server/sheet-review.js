@@ -1,5 +1,5 @@
 import {randomUUID} from 'node:crypto';
-import {cleanCompany} from './company-data.js';
+import {changedCompany} from './company-data.js';
 import {CloudError} from './cloud-config.js';
 
 export const sheetFieldLabels={name:'업체명',startDate:'시작일',category:'진행 상품',mainKeyword:'메인키워드',contact:'연락처',manager:'담당자',existingEndDate:'기존 종료일 · 보관용'};
@@ -55,7 +55,7 @@ export function localSheetCompanies(db){
 export function applyLocalSheetUpdates(db,plans){
   db.exec('BEGIN');
   try{
-    const changes=plans.map(p=>{const old=db.prepare('SELECT * FROM companies WHERE id=?').get(p.id);if(!old||old.updatedAt!==p.updatedAt)throw new CloudError('다른 PC 또는 화면에서 먼저 수정했습니다. 시트를 다시 확인해 주세요.',409);return {id:p.id,c:cleanCompany({...old,...p.values})};});
+    const changes=plans.map(p=>{const old=db.prepare('SELECT * FROM companies WHERE id=?').get(p.id);if(!old||old.updatedAt!==p.updatedAt)throw new CloudError('다른 PC 또는 화면에서 먼저 수정했습니다. 시트를 다시 확인해 주세요.',409);return {id:p.id,c:changedCompany(old,p.values)};});
     for(const {id,c} of changes)db.prepare('UPDATE companies SET name=?,category=?,mainKeyword=?,manager=?,contact=?,startDate=?,endDate=?,existingEndDate=?,updatedAt=? WHERE id=?').run(c.name,c.category,c.mainKeyword,c.manager,c.contact,c.startDate,c.endDate,c.existingEndDate,new Date().toISOString(),id);
     db.exec('COMMIT');return {updated:changes.length};
   }catch(e){db.exec('ROLLBACK');throw e;}

@@ -116,10 +116,13 @@ if(!locked){app.quit();}else{
     if(!applied.ok)throw Error('Reviewed sheet update failed');
     const result=await(await fetch(origin+'/api/companies',{headers})).json(),updated=result.companies.find(c=>c.id===source.id);
     if(updated.endDate!=='2026-11-01'||updated.mainKeyword!=='갱신 키워드'||updated.notes!=='직접 작성한 메모'||updated.manager!=='앱 담당자')throw Error('Sheet refresh lost dates, keyword or app-only fields');
+    const manualDate=await fetch(origin+'/api/companies/'+source.id,{method:'PUT',headers,body:JSON.stringify({...updated,endDate:'2026-11-10',endDateEdited:true})});
+    const manualResult=await(await fetch(origin+'/api/companies',{headers})).json();
+    if(!manualDate.ok||manualResult.companies.find(c=>c.id===source.id)?.endDate!=='2026-11-10')throw Error('Manual end date did not persist');
     const page=await window.webContents.executeJavaScript(`new Promise(resolve=>{let attempts=0;const inspect=()=>{const state={title:document.title,bridge:!!window.waitingListDesktop,heading:document.querySelector('h1')?.textContent};if(state.heading||++attempts>=100)resolve(state);else setTimeout(inspect,100);};inspect();})`);
     if(!page.title.includes('Waiting List')||!page.bridge||!page.heading)throw Error('Desktop window did not render: '+JSON.stringify(page));
     window.close();if(window.isDestroyed()||!child.connected)throw Error('Closing the window stopped the background process');
-    show();console.log('DESKTOP_SMOKE_PASS: automatic sheet import, reviewed refresh of changed dates and keywords, preserved app memos/managers, runtime SQLite, private API, backup, isolated preload, window-to-tray behavior');
+    show();console.log('DESKTOP_SMOKE_PASS: manual end-date save, automatic sheet import, reviewed refresh, preserved app memos/managers, runtime SQLite, private API, backup, isolated preload, window-to-tray behavior');
     await quit();
   }
   app.on('second-instance',show);

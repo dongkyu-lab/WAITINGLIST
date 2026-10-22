@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import {createRequire} from 'node:module';
 import {createCloudAPI} from '../server/cloud-api.js';
 const {createAccessRetry}=createRequire(import.meta.url)('../desktop/access-retry.cjs');
-import {doc,setDoc,serverTimestamp,getDocFromServer,disableNetwork,enableNetwork} from 'firebase/firestore';
+import {doc,setDoc,serverTimestamp,getDocFromServer,updateDoc,disableNetwork,enableNetwork} from 'firebase/firestore';
 import {FirebaseWorkspace} from '../server/firebase-workspace.js';
 const enabled=Boolean(process.env.WAITINGLIST_FIREBASE_EMULATOR_TEST);
 const config={firebase:{projectId:'demo-waitinglist',apiKey:'fake-api-key-for-testing-only'},workspaceId:'waitinglist'};
@@ -103,6 +103,23 @@ test('real Firebase emulators: different Google accounts share data; rules, conf
     assert.equal(owner.notifications()[0].companies.find(c=>c.name==='알림 대상').days,6);
     await owner.markNotificationsRead();await waitFor(()=>owner.notifications()[0].readAt,'Read state did not update');assert.equal(editor.notifications()[0].readAt,null);
     const second=create();await second.login(null,{googleIdToken:googleToken('owner@example.test')});await waitFor(()=>second.notifications()[0]?.readAt,'Same-account read state did not sync');
+  });
+  await t.test('custom end dates sync across accounts, survive reload, reset on start changes and reject malformed direct writes',async()=>{
+    const {id}=await owner.add({name:'수동 종료일 검증',startDate:'2026-10-01',endDate:'2026-10-25',notes:'종료일 메모'});
+    await waitFor(()=>editor.companies().find(c=>c.id===id)?.endDate==='2026-10-25','Manual end date did not sync');
+    let c=editor.companies().find(c=>c.id===id);await editor.update(id,{...c,endDate:'2026-10-27'});
+    await waitFor(()=>owner.companies().find(c=>c.id===id)?.endDate==='2026-10-27','Edited end date did not sync');
+    const reloaded=create();await reloaded.login(null,{googleIdToken:googleToken('owner@example.test')});assert.equal(reloaded.companies().find(c=>c.id===id).endDate,'2026-10-27');
+    c=owner.companies().find(c=>c.id===id);await owner.update(id,{...c,notes:'다른 항목만 수정'});
+    await waitFor(()=>editor.companies().find(c=>c.id===id)?.notes==='다른 항목만 수정','Memo did not sync');
+    assert.equal(editor.companies().find(c=>c.id===id).endDate,'2026-10-27');
+    c=editor.companies().find(c=>c.id===id);await editor.update(id,{...c,startDate:'2026-10-02'});
+    await waitFor(()=>owner.companies().find(c=>c.id===id)?.endDate==='2026-11-01','Start date did not reset manual end date');
+    const snapshot=await getDocFromServer(owner.ref('companies/'+id));assert.equal(Object.hasOwn(snapshot.data(),'endDate'),false);
+    await assert.rejects(updateDoc(editor.ref('companies/'+id),{endDate:'not-a-date',version:snapshot.data().version+1,updatedAt:serverTimestamp()}));
+    c=owner.companies().find(c=>c.id===id);await owner.update(id,{...c,endDate:''});
+    await waitFor(()=>editor.companies().find(c=>c.id===id)?.endDate===''&&owner.companies().find(c=>c.id===id)?.endDate==='','Explicit blank end date did not sync');
+    await owner.remove(id,owner.companies().find(c=>c.id===id));
   });
   await t.test('removing an editor immediately locks their open PC and prevents API access',async()=>{
     await owner.removeMember('editor@example.test');await waitFor(()=>editor.profile===null,'Removed member stayed logged in');

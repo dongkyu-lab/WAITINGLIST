@@ -8,7 +8,15 @@ export function cleanCompany(input) {
   if(startDate&&!validDate(startDate))throw new Error('시작일을 확인해 주세요.');
   const fields=Object.fromEntries(['category','mainKeyword','manager','contact','notes','existingEndDate'].map(key=>[key,String(input[key]||'').trim()]));
   if(Object.values(fields).some(value=>value.length>5000))throw new Error('입력값은 5,000자 이내로 작성해 주세요.');
-  return {name,startDate,endDate:startDate?addDays(startDate,30):'',...fields};
+  const endDate=Object.hasOwn(input,'endDate')?String(input.endDate??'').trim():startDate?addDays(startDate,30):'';
+  if(endDate&&!validDate(endDate))throw new Error('종료일을 확인해 주세요.');
+  return {name,startDate,endDate,...fields};
+}
+
+export function changedCompany(previous,changes){
+  const input={...previous,...changes};
+  if(Object.hasOwn(changes,'startDate')&&changes.startDate!==previous.startDate&&!changes.endDateEdited&&(!Object.hasOwn(changes,'endDate')||changes.endDate===cleanCompany(previous).endDate))delete input.endDate;
+  return cleanCompany(input);
 }
 
 export function insertCompany(db,c) {

@@ -1,10 +1,10 @@
 import {createHash,randomUUID} from 'node:crypto';
 import {initializeApp,deleteApp} from 'firebase/app';
 import {initializeAuth,inMemoryPersistence,GoogleAuthProvider,signInWithCredential,signOut,connectAuthEmulator} from 'firebase/auth';
-import {getFirestore,doc,collection,query,orderBy,limit,getDocFromServer,getDocsFromServer,onSnapshot,runTransaction,serverTimestamp,connectFirestoreEmulator,terminate} from 'firebase/firestore';
-import {cleanCompany} from './company-data.js';
+import {getFirestore,doc,collection,query,orderBy,limit,getDocFromServer,getDocsFromServer,onSnapshot,runTransaction,serverTimestamp,deleteField,connectFirestoreEmulator,terminate} from 'firebase/firestore';
+import {cleanCompany,changedCompany} from './company-data.js';
 import {CloudError,normalizeEmail,validEmail} from './cloud-config.js';
-import {dueSlot,koreaClock,daysLeft} from './dates.js';
+import {dueSlot,koreaClock,daysLeft,addDays} from './dates.js';
 import {notificationTargets} from './scheduler.js';
 import {sheetTarget,planSheetUpdates} from './sheet-review.js';
 
@@ -17,7 +17,10 @@ export function cloudError(error){
   if(code.includes('auth/'))return new CloudError('Google 로그인을 완료하지 못했습니다. 로그인 설정과 계정을 확인해 주세요.',401,'unauthenticated');
   return new CloudError('공유 서버에 연결하지 못했습니다. 저장 여부를 확인한 뒤 다시 시도해 주세요.');
 }
-const persisted=input=>{try{const c=cleanCompany(input);delete c.endDate;return c;}catch(error){throw new CloudError(error.message,400,'invalid-input');}};
+// Store only manual end-date overrides. Older records derive start +30 as before.
+const persisted=(input,previous=null)=>{try{const c=previous?changedCompany(previous,input):cleanCompany(input);if(c.endDate===(c.startDate?addDays(c.startDate,30):''))delete c.endDate;return c;}catch(error){throw new CloudError(error.message,400,'invalid-input');}};
+const cloudPatch=(data,old)=>({...data,...(Object.hasOwn(old,'endDate')&&!Object.hasOwn(data,'endDate')?{endDate:deleteField()}:{})});
+const dateWriteError=(error,data)=>{if(Object.hasOwn(data,'endDate')&&String(error.code).includes('permission-denied'))throw new CloudError('종료일을 공유하려면 관리자가 설정의 ‘종료일 수정 사용 설정’에서 최신 Firebase 규칙을 한 번 게시해야 합니다.',403,'end-date-rules');throw error;};
 const seedId=c=>'sheet-'+createHash('sha256').update(JSON.stringify([c.name,c.startDate])).digest('hex');
 export class FirebaseWorkspace {
   constructor(config,{emulator=null,onChange=()=>{},onLock=()=>{}}={}){
@@ -83,17 +86,18 @@ export class FirebaseWorkspace {
   assertWritable(){if(this.closed||!this.profile)throw new CloudError('Google 로그인이 필요합니다.',401);if(!this.online)throw new CloudError('인터넷 연결이 끊겼습니다. 다시 연결된 뒤 수정해 주세요.',503,'offline');}
   async add(input){
     this.assertWritable();const id=randomUUID(),ref=this.ref('companies/'+id),data=persisted(input);
-    await runTransaction(this.db,async tx=>{const existing=await tx.get(ref);if(existing.exists())return;tx.set(ref,{...data,version:1,deleted:false,sourceName:'',sourceStartDate:'',createdAt:serverTimestamp(),updatedAt:serverTimestamp()});});return {id};
+    try{await runTransaction(this.db,async tx=>{const existing=await tx.get(ref);if(existing.exists())return;tx.set(ref,{...data,version:1,deleted:false,sourceName:'',sourceStartDate:'',createdAt:serverTimestamp(),updatedAt:serverTimestamp()});});}catch(e){dateWriteError(e,data);}return {id};
   }
   async update(id,input){
     this.assertWritable();if(!/^[A-Za-z0-9_-]{1,80}$/.test(id))throw new CloudError('업체를 찾을 수 없습니다.',404);
-    const ref=this.ref('companies/'+id),data=persisted(input);
-    await runTransaction(this.db,async tx=>{
+    const ref=this.ref('companies/'+id);let data;
+    try{await runTransaction(this.db,async tx=>{
       const snapshot=await tx.get(ref),old=snapshot.data();
       if(!old||old.deleted)throw new CloudError('삭제된 업체입니다. 목록을 새로 확인해 주세요.',404);
       if(String(old.version)!==input.updatedAt)throw new CloudError('다른 PC에서 먼저 수정했습니다. 창을 닫고 최신 내용을 확인한 뒤 다시 수정해 주세요.',409,'conflict');
-      tx.update(ref,{...data,version:old.version+1,updatedAt:serverTimestamp()});
-    });return {ok:true};
+      data=persisted(input,old);
+      tx.update(ref,{...cloudPatch(data,old),version:old.version+1,updatedAt:serverTimestamp()});
+    });}catch(e){dateWriteError(e,data||{});}return {ok:true};
   }
   async remove(id,input){
     this.assertWritable();if(!/^[A-Za-z0-9_-]{1,80}$/.test(id))throw new CloudError('업체를 찾을 수 없습니다.',404);
@@ -128,9 +132,9 @@ export class FirebaseWorkspace {
       const changes=plans.map((p,i)=>{
         const old=snapshots[i].data();
         if(!old||old.deleted||String(old.version)!==p.updatedAt)throw new CloudError('다른 PC에서 먼저 수정했습니다. 시트를 다시 새로고침해 주세요.',409,'conflict');
-        return {c:persisted({...old,...p.values}),old};
+        return {c:persisted(p.values,old),old};
       });
-      changes.forEach(({c,old},i)=>tx.update(refs[i],{...c,version:old.version+1,updatedAt:serverTimestamp()}));
+      changes.forEach(({c,old},i)=>tx.update(refs[i],{...cloudPatch(c,old),version:old.version+1,updatedAt:serverTimestamp()}));
       return {updated:changes.length};
     });
   }
@@ -145,7 +149,7 @@ export class FirebaseWorkspace {
       const refs=items.map(item=>this.ref('companies/'+item.id)),old=await Promise.all(refs.map(ref=>tx.get(ref)));let added=0,updated=0,skipped=0;
       items.forEach((item,i)=>{
         const previous=old[i].data();if(item.ambiguous||previous?.deleted||(previous&&previous.version!==1)){skipped++;return;}
-        if(previous){tx.update(refs[i],{...item.c,version:previous.version+1,updatedAt:serverTimestamp()});updated++;}
+        if(previous){tx.update(refs[i],{...cloudPatch(item.c,previous),version:previous.version+1,updatedAt:serverTimestamp()});updated++;}
         else{tx.set(refs[i],{...item.c,version:1,deleted:false,sourceName:item.c.name,sourceStartDate:item.c.startDate,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});added++;}
       });return {added,updated,skipped};
     });

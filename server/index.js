@@ -5,7 +5,7 @@ import { existsSync,readFileSync } from 'node:fs';
 import { openStore } from './store.js';
 import { koreaClock } from './dates.js';
 import { createScheduler } from './scheduler.js';
-import {cleanCompany,insertCompany as insertIntoDB} from './company-data.js';
+import {cleanCompany,changedCompany,insertCompany as insertIntoDB} from './company-data.js';
 import {createAutoSheetReader,fetchSheetRows,rememberSheetDeletion} from './auto-sheet.js';
 import {createCloudAPI} from './cloud-api.js';
 import {cloudError} from './firebase-workspace.js';
@@ -80,7 +80,7 @@ app.put('/api/companies/:id',(req,res)=>{
   const old=db.prepare('SELECT * FROM companies WHERE id=?').get(req.params.id);
   if(!old) return res.status(404).json({error:'업체를 찾을 수 없습니다.'});
   if(req.body.updatedAt!==old.updatedAt) return res.status(409).json({error:'다른 사용자가 수정했습니다. 창을 닫고 새로고침한 뒤 다시 수정해 주세요.'});
-  const c=cleanCompany(req.body);
+  const c=changedCompany(old,req.body);
   db.prepare('UPDATE companies SET name=?,category=?,mainKeyword=?,manager=?,contact=?,startDate=?,endDate=?,notes=?,updatedAt=? WHERE id=?').run(c.name,c.category,c.mainKeyword,c.manager,c.contact,c.startDate,c.endDate,c.notes,new Date().toISOString(),old.id);
   res.json({ok:true});
 });
