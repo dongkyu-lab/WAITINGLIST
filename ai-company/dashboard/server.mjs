@@ -396,9 +396,19 @@ server.on('error', (e) => {
   }
   throw e;
 });
+// 기본 브라우저로 주소를 연다. 실패해도 서버는 계속 돌고, 주소를 직접 열라고 안내한다.
 function openBrowser(url) {
-  const cmd = process.platform === 'win32' ? `start "" "${url}"` : process.platform === 'darwin' ? `open "${url}"` : `xdg-open "${url}"`;
-  import('node:child_process').then(({ exec }) => exec(cmd, () => {}));
+  const [bin, args] = process.platform === 'win32' ? ['rundll32', ['url.dll,FileProtocolHandler', url]]
+    : process.platform === 'darwin' ? ['open', [url]] : ['xdg-open', [url]];
+  import('node:child_process').then(({ spawn }) => {
+    try {
+      const p = spawn(bin, args, { stdio: 'ignore', detached: true });
+      p.on('error', () => console.log(`브라우저를 자동으로 못 열었습니다. 주소창에 ${url} 을 직접 입력하세요.`));
+      p.unref();
+    } catch {
+      console.log(`브라우저를 자동으로 못 열었습니다. 주소창에 ${url} 을 직접 입력하세요.`);
+    }
+  });
 }
 server.listen(PORT, '127.0.0.1', () => {
   const url = `http://localhost:${PORT}`;
