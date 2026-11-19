@@ -1,0 +1,11 @@
+{
+  "name": "ai-company",
+  "private": true,
+  "description": "AI회사 상황실 — 본부장과 팀 에이전트의 결재·브리핑·사용량 대시보드",
+  "type": "module",
+  "scripts": {
+    "start": "node dashboard/server.mjs --open",
+    "demo": "node dashboard/server.mjs --demo --open"
+  },
+  "engines": { "node": ">=18" }
+}
