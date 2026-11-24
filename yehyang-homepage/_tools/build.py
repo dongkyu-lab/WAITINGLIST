@@ -46,7 +46,7 @@ def head(title, desc, path, extra_head=''):
 <meta property="og:site_name" content="{NAME}">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{desc}">
-<meta property="og:image" content="assets/horong-plate.webp">
+<meta property="og:image" content="assets/course-special.webp">
 <meta property="og:locale" content="ko_KR">
 <meta name="theme-color" content="#322e29">
 <link rel="icon" type="image/png" href="assets/favicon.png">
@@ -153,10 +153,10 @@ COURSES = [
 ]
 
 SET_COURSES = [
-    dict(id='set-yehyang', tier='코스 정식 · 한상차림', rank='3~4인', name='예향 정식', price='160,000', img='course-yehyang',
-         desc='활어회를 중심으로 홍어삼합, 가리비 치즈구이, 초밥과 제철 음식을 한 상 가득 차려 드리는 예향의 회 한정식입니다.',
-         items=['활어회', '홍어삼합', '가리비구이', '초밥', '제철 찬']),
-    dict(id='set-special', tier='코스 정식 · 한상차림', rank='4~5인', name='예향 특정식', price='200,000', img='course-special',
+    dict(id='set-yehyang', tier='코스 정식 · 한상차림', rank='3~4인', name='예향 정식', price='160,000', img='course-special',
+         desc='꽃 모양으로 담아낸 활어회와 해산물 모둠, 초밥과 제철 찬을 한 상 가득 차려 드리는 예향의 회 한정식입니다.',
+         items=['꽃 활어회', '해산물 모둠', '초밥', '제철 찬']),
+    dict(id='set-special', tier='코스 정식 · 한상차림', rank='4~5인', name='예향 특정식', price='200,000', img='abalone-new',
          desc='예향 정식에 전복·해삼·멍게 등 특별한 제철 해산물이 더해진 업그레이드 한상. 귀한 손님을 모시는 자리에 어울립니다.',
          items=['꽃 활어회', '제철 해산물 모둠', '초밥', '제철 찬']),
 ]
@@ -183,11 +183,11 @@ def price_rows(rows):
 # ------------------------------------------------------------------ HOME
 home = f'''<section class="hero" aria-labelledby="hero-title">
 <div class="hero-slides" aria-hidden="true">
-<div class="hero-slide is-active" style="background-image:url('assets/horong-plate.webp')"></div>
-<div class="hero-slide" data-bg="assets/course-nakgul.webp"></div>
-<div class="hero-slide" data-bg="assets/hoe-flower.webp"></div>
-<div class="hero-slide" data-bg="assets/course-special.webp"></div>
-<div class="hero-slide" data-bg="assets/course-yehyang.webp"></div>
+<div class="hero-slide is-active" style="background-image:url('assets/course-special.webp');background-position:center 50%"></div>
+<div class="hero-slide" data-bg="assets/store-front.webp" style="background-position:center 38%"></div>
+<div class="hero-slide" data-bg="assets/store-room.webp" style="background-position:center 55%"></div>
+<div class="hero-slide" data-bg="assets/course-nakgul.webp" style="background-position:center 50%"></div>
+<div class="hero-slide" data-bg="assets/hoe-flower.webp" style="background-position:center 50%"></div>
 </div>
 <div class="hero-shade"></div>
 <div class="wrap hero-content">
@@ -261,8 +261,8 @@ home = f'''<section class="hero" aria-labelledby="hero-title">
 </div>
 <div class="story-grid">
 <a class="story-card" href="menu.html#table-story"><figure><img src="assets/course-special.webp" alt="한 상 가득 차려진 예향 정식" loading="lazy"></figure><div><span>MENU</span><h3>한 상의 이야기</h3><p>정식별 상차림을 사진으로 살펴보세요.</p><b>메뉴 보기 →</b></div></a>
-<a class="story-card" href="space.html"><figure><img src="assets/hoe-flower-wide.webp" alt="꽃 모양으로 담아낸 활어회와 초밥" loading="lazy"></figure><div><span>SPACE</span><h3>전 좌석 개별 룸</h3><p>룸·별실 12실, 최대 90명까지.</p><b>공간 보기 →</b></div></a>
-<a class="story-card" href="gathering.html"><figure><img src="assets/course-yehyang.webp" alt="여럿이 함께하는 한정식 상차림" loading="lazy"></figure><div><span>GATHERINGS</span><h3>모임별 안내</h3><p>상견례·가족 모임·접대·회식.</p><b>모임 안내 →</b></div></a>
+<a class="story-card" href="space.html"><figure><img src="assets/store-room.webp" alt="예향한정식 단체석 내부" loading="lazy"></figure><div><span>SPACE</span><h3>전 좌석 개별 룸</h3><p>룸·별실 12실, 최대 90명까지.</p><b>공간 보기 →</b></div></a>
+<a class="story-card" href="gathering.html"><figure><img src="assets/hoe-flower-wide.webp" alt="여럿이 함께하는 한정식 상차림" loading="lazy"></figure><div><span>GATHERINGS</span><h3>모임별 안내</h3><p>상견례·가족 모임·접대·회식.</p><b>모임 안내 →</b></div></a>
 <a class="story-card" href="news.html"><figure><img src="assets/dosirak.webp" alt="목포 프리미엄 한정식 도시락" loading="lazy"></figure><div><span>NEWS</span><h3>예향 소식</h3><p>새 메뉴와 이벤트, 휴무 안내.</p><b>소식 보기 →</b></div></a>
 </div>
 </div>
@@ -442,8 +442,8 @@ tabs_data = [
     ('nakgul', '낙굴 정식', '1인 40,000원 · 판매 1위', 'course-nakgul', '낙지호롱과 활어회, 초밥, 스끼, 보리굴비가 한 상에 차려지는 예향의 판매 1위 상차림입니다.', ['낙지호롱', '회', '초밥', '스끼', '굴비 大']),
     ('gulbi', '목포식 굴비 정식', '1인 20,000원 · 점심 특선', 'table-gulbi-horong', '기본 반찬과 보리굴비. 울금밥을 울금물에 살짝 말아 굴비 한 점을 올려 드셔보세요.', ['기본반찬', '굴비 小']),
     ('myeongpum', '명품 정식', '1인 30,000원', 'hoe-flower', '신선한 활어회와 울금 초밥, 다양한 스끼에 보리굴비가 함께 나옵니다.', ['회', '초밥', '스끼', '굴비 大']),
-    ('set-yehyang', '예향 정식', '3~4인 한상 160,000원', 'course-yehyang', '활어회와 홍어삼합, 가리비구이, 초밥과 제철 찬을 한 상 가득 차려 드립니다.', ['활어회', '홍어삼합', '가리비구이', '초밥']),
-    ('set-special', '예향 특정식', '4~5인 한상 200,000원', 'course-special', '꽃 활어회와 제철 해산물 모둠이 더해진 예향의 가장 풍성한 한상입니다.', ['꽃 활어회', '제철 해산물', '초밥']),
+    ('set-yehyang', '예향 정식', '3~4인 한상 160,000원', 'course-special', '꽃 활어회와 해산물 모둠, 초밥과 제철 찬을 한 상 가득 차려 드립니다.', ['꽃 활어회', '해산물 모둠', '초밥', '제철 찬']),
+    ('set-special', '예향 특정식', '4~5인 한상 200,000원', 'abalone-new', '예향 정식에 전복 등 특별한 제철 해산물이 더해진 예향의 가장 풍성한 한상입니다.', ['꽃 활어회', '전복', '제철 해산물', '초밥']),
 ]
 tab_btns = ''.join(
     f'<button type="button" role="tab" id="tab-{k}" aria-controls="panel-{k}" aria-selected="{"true" if i == 0 else "false"}" tabindex="{0 if i == 0 else -1}">{n}</button>'
@@ -558,7 +558,7 @@ space = inner_hero('space-hero', 'OUR SPACE', '공간 안내', '함께하는 인
 </section>
 
 <section class="signature-section">
-<div class="signature-photo"><img src="assets/group-table.webp" alt="여럿이 함께 앉는 단체석에 차려진 한정식 상" loading="lazy"></div>
+<div class="signature-photo"><img src="assets/store-room.webp" alt="여럿이 함께 앉는 예향한정식 단체석" loading="lazy"></div>
 <div class="signature-content">
 {eyebrow('FOR EVERY GATHERING')}
 <h2>작은 만남부터<br><em>큰 모임까지</em></h2>
@@ -613,10 +613,10 @@ OCC = [
     ('business', 'BUSINESS', '접대 · 회식', '손님을 모시는 자리, 품격 있게.', 'scallop-samhap',
      '목포의 대표 음식인 홍어삼합과 낙지, 활어회로 손님께 목포의 맛을 소개해 보세요. 단체석은 최대 90명까지 이용할 수 있습니다.',
      ['인원과 예산을 알려주시면 메뉴를 제안해 드립니다.', '콜키지 가능 (병당 20,000원, 최대 2병).', '평화광장 무료 공영주차장을 이용하세요.']),
-    ('travel', 'TRAVEL', '목포 여행 식사', '목포에서의 하루에 맛있는 기억을 더하다.', 'horong-plate',
+    ('travel', 'TRAVEL', '목포 여행 식사', '목포에서의 하루에 맛있는 기억을 더하다.', 'course-nakgul',
      '평화광장 바로 앞이라 바다분수, 해상케이블카, 삼학도 크루즈와 함께 여행 코스로 들르기 좋습니다. 점심에는 굴비 정식, 저녁에는 낙굴 정식을 추천합니다.',
      ['주말·여행 성수기에는 예약을 권장합니다.', '네이버 예약으로 날짜와 인원을 간편하게 정하세요.', '보리굴비 택배로 여행의 맛을 집까지 이어가세요.']),
-    ('yearend', 'YEAR END', '송년회 · 연말 모임', '올해의 마지막 모임, 정성 가득한 한 상으로.', 'course-yehyang',
+    ('yearend', 'YEAR END', '송년회 · 연말 모임', '올해의 마지막 모임, 정성 가득한 한 상으로.', 'store-room',
      '고마웠던 사람들과 한 해를 마무리하는 자리. 연말에는 예약이 몰리니 날짜와 인원을 일찍 알려주시면 자리와 메뉴를 넉넉히 준비해 드립니다.',
      ['12월 주말 저녁은 일찍 마감될 수 있습니다.', '인원이 많으면 단체석으로 배정해 드립니다.', '코스 정식(3~4인 160,000원 · 4~5인 200,000원)으로 테이블별 주문이 편합니다.']),
     ('dosirak', 'CATERING', '단체 · 행사 도시락', '정성 가득한 한 상을 도시락에.', 'dosirak',
