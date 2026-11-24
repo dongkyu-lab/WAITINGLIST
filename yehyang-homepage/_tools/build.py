@@ -150,6 +150,9 @@ COURSES = [
     dict(id='nakgul', tier='40,000원 정식', rank='판매 1위', name='낙굴 정식', fish='부세', price='40,000', img='course-nakgul',
          desc='목포 낙지와 보리굴비의 만남. 양념이 듬뿍 밴 낙지호롱과 활어회, 초밥, 보리굴비가 함께 나오는 가장 많이 찾으시는 상차림입니다.',
          items=['낙지호롱', '회', '초밥', '스끼', '굴비 大']),
+    dict(id='hongsam', tier='50,000원 정식', rank='만족도 1위', name='홍삼 정식', fish='부세', price='50,000', img='hongsam-samhap',
+         desc='목포를 대표하는 홍어삼합에 낙지, 활어회와 초밥, 큼직한 보리굴비까지 한 번에 즐기는 예향의 가장 풍성한 정식입니다.',
+         items=['홍어삼합', '낙지', '회', '초밥', '스끼', '굴비 大']),
 ]
 
 SET_COURSES = [
@@ -249,7 +252,7 @@ home = f'''<section class="hero" aria-labelledby="hero-title">
 <article class="menu-card"><span class="menu-index">02</span><div class="menu-icon" aria-hidden="true">品</div><h3>명품 정식</h3><p>활어회 · 초밥 · 스끼 · 보리굴비(大)</p><p class="menu-price">1인 30,000원</p></article>
 <article class="menu-card"><span class="menu-index">03 · 판매 1위</span><div class="menu-icon" aria-hidden="true">珍</div><h3>낙굴 정식</h3><p>낙지호롱 · 활어회 · 초밥 · 스끼 · 보리굴비(大)</p><p class="menu-price">1인 40,000원</p></article>
 </div>
-<p class="menu-note">떡갈비랑 굴비랑(1인 30,000원), 코스 정식(한상 160,000원 · 200,000원)과 단품 요리는 <a href="menu.html">전체 메뉴</a>에서 확인하세요.</p>
+<p class="menu-note">떡갈비랑 굴비랑(1인 30,000원), 홍삼 정식(1인 50,000원), 코스 정식(한상 160,000원 · 200,000원)과 홍어삼합 등 단품 요리는 <a href="menu.html">전체 메뉴</a>에서 확인하세요.</p>
 </div>
 </section>
 
@@ -483,7 +486,8 @@ menu = inner_hero('menu-hero', 'OUR MENU', '메뉴 안내', '정갈한 한 상�
 <section class="price-section" id="single">
 <div class="price-title">{eyebrow('À LA CARTE')}<h2>예향 단품 요리</h2><p>한 상에 더하는 목포의 별미</p></div>
 <ul class="price-list">
-<li class="price-row"><strong>낙지탕탕이 · 낙지호롱 · 홍어삼합<span class="sub">청양고추·마늘·참기름의 낙지탕탕이, 생낙지로 만든 낙지호롱, 국내산 홍어와 삼겹살·묵은지의 홍어삼합</span></strong><span class="price-multi"><span class="price"><small>한 접시</small>60,000원</span><span class="price"><small>반 접시</small>30,000원</span></span></li>
+<li class="price-row"><strong>홍어삼합 <span class="menu-badge">목포 대표</span><span class="sub">국내산 홍어와 국내산 삼겹살, 잘 숙성된 묵은지를 곁들여 먹는 목포의 대표 음식</span></strong><span class="price-multi"><span class="price"><small>한 접시</small>60,000원</span><span class="price"><small>반 접시</small>30,000원</span></span></li>
+<li class="price-row"><strong>낙지탕탕이 · 낙지호롱<span class="sub">청양고추·마늘·참기름의 낙지탕탕이, 생낙지로 만든 낙지호롱</span></strong><span class="price-multi"><span class="price"><small>한 접시</small>60,000원</span><span class="price"><small>반 접시</small>30,000원</span></span></li>
 <li class="price-row"><strong>연포탕 · 초밥 · 산낙지비빔밥 · 회덮밥<span class="sub">예향만의 비법이 담긴 진한 연포탕</span></strong><span class="price">40,000원</span></li>
 <li class="price-row"><strong>(수제 한돈) 떡갈비</strong><span class="price"><small>한 접시</small>30,000원</span></li>
 </ul>
@@ -535,7 +539,7 @@ menu = inner_hero('menu-hero', 'OUR MENU', '메뉴 안내', '정갈한 한 상�
 </section>
 '''
 page('menu.html', f'메뉴 안내 · 보리굴비 정식·낙굴 정식 | {NAME}',
-     '점심 특선 목포식 굴비 정식 20,000원 · 명품 정식 30,000원 · 낙굴 정식 40,000원, 코스 정식 160,000원·200,000원. 도시락·주류까지 예향한정식 메뉴를 확인하세요.', menu)
+     '점심 특선 목포식 굴비 정식 20,000원 · 명품 정식 30,000원 · 낙굴 정식 40,000원 · 홍삼 정식 50,000원, 코스 정식 160,000원·200,000원, 홍어삼합. 도시락·주류까지 예향한정식 메뉴를 확인하세요.', menu)
 
 # ------------------------------------------------------------------ SPACE
 space = inner_hero('space-hero', 'OUR SPACE', '공간 안내', '함께하는 인원에 맞춰, 편안한 만남의 공간을 준비합니다.') + f'''
