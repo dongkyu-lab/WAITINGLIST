@@ -49,7 +49,9 @@ def head(title, desc, path, extra_head=''):
 <meta property="og:image" content="assets/hero-table.webp">
 <meta property="og:locale" content="ko_KR">
 <meta name="theme-color" content="#322e29">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23322e29'/%3E%3Crect x='6' y='6' width='52' height='52' fill='none' stroke='%23c5a473' stroke-width='2'/%3E%3Ctext x='32' y='41' font-size='22' text-anchor='middle' fill='%23e3c79c' font-family='serif'%3E%EC%98%88%ED%96%A5%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/favicon.png">
+<link rel="preload" href="assets/fonts/yehyang-brush.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&amp;family=Noto+Serif+KR:wght@500;600&amp;display=swap">
@@ -66,7 +68,7 @@ def header(current):
 <header class="site-header" id="top">
 <div class="header-inner">
 <a class="brand" href="index.html" aria-label="{NAME} 홈">
-<span class="brand-mark" aria-hidden="true">예향</span>
+<span class="brand-mark" aria-hidden="true">禮香</span>
 <span class="brand-text"><strong>예향한정식</strong><small>목포보리굴비 평화광장점</small></span>
 </a>
 <nav class="desktop-nav" aria-label="주요 메뉴">
@@ -88,7 +90,7 @@ def footer(extra_scripts=''):
     return f'''<footer class="site-footer">
 <div class="wrap footer-inner">
 <div>
-<div class="footer-brand">{NAME}</div>
+<div class="footer-brand"><span class="footer-mark" aria-hidden="true">禮香</span>{NAME}</div>
 <p>{ADDR} · 예약 문의 <a href="tel:{TEL}">{TEL}</a><br>매일 11:00 – 21:00 · 브레이크타임 14:30 – 17:00 · 라스트오더 20:00</p>
 <p><a href="{NAVER_PLACE}" target="_blank" rel="noopener">네이버 플레이스</a> · <a href="{INSTA}" target="_blank" rel="noopener">인스타그램</a> · <a href="{BLOG}" target="_blank" rel="noopener">블로그</a> · <a href="{MOKPO_TOUR}" target="_blank" rel="noopener">목포문화관광</a></p>
 </div>
@@ -142,29 +144,19 @@ COURSES = [
     dict(id='nakgul', tier='예향 진품 메뉴', rank='판매 1위', name='낙굴 정식', fish='부세', price='40,000', img='tangtang',
          desc='목포 낙지와 보리굴비의 만남. 낙지탕탕이·낙지호롱과 활어회, 보리굴비가 함께 나오는 요즘 가장 많이 찾으시는 상차림입니다.',
          items=['낙지', '회', '초밥', '스끼', '굴비 大']),
-    dict(id='myeongpum', tier='예향 진품 메뉴', rank='', name='명품 정식', fish='부세', price='30,000', img='hoe-gulbi',
-         desc='신선한 활어회와 울금 초밥, 다양한 스끼와 옛날 방식으로 손질해 조리한 큼직한 보리굴비가 함께하는 정성 가득한 한 상.',
+    dict(id='myeongpum', tier='예향 진품 메뉴', rank='', name='명품 정식', fish='부세', price='30,000', img='myeongpum',
+         desc='신선한 활어회와 울금 초밥, 다양한 스끼와 옛날 방식으로 조리한 큼직한 보리굴비가 함께하는 정성 가득한 한 상.',
          items=['회', '초밥', '스끼', '굴비 大']),
     dict(id='tteokgalbi', tier='예향 진품 메뉴', rank='', name='떡갈비랑 굴비랑', fish='부세', price='30,000', img='tteokgalbi',
          desc='국내산 한돈으로 직접 빚은 수제 떡갈비와 보리굴비를 함께. 어르신과 아이가 함께하는 가족 식사에 특히 좋습니다.',
          items=['수제 한돈 떡갈비', '초밥', '스끼', '굴비 大']),
-    dict(id='gulbi', tier='점심 특선', rank='', name='굴비 정식', fish='부세', price='20,000', img='gulbi',
+    dict(id='gulbi', tier='점심 특선', rank='', name='굴비 정식', fish='부세', price='20,000', img='gulbi-grill',
          desc='정갈한 기본 반찬과 해풍에 맛 들인 보리굴비 한 마리. 점심에 가볍고 든든하게 즐기는 목포식 보리굴비 정식입니다.',
          items=['기본반찬', '굴비 小'], foot='※ 점심특선 메뉴입니다.'),
 ]
 
 SETS = [('2 ~ 3인', '140,000원'), ('3 ~ 4인', '160,000원'), ('4 ~ 5인', '200,000원')]
 
-ORIGIN = [
-    ('소고기', '국내산 한우'), ('부세굴비', '중국산'), ('넙치(광어)', '국내산'), ('명태(황태·북어)', '사용 안 함'),
-    ('돼지고기', '국내산'), ('배추', '국내산'), ('조피볼락(우럭)', '국내산'), ('오징어', '국내산'),
-    ('닭고기', '국내산'), ('고춧가루', '국내산'), ('참돔', '국내산'), ('참조기', '국내산'),
-    ('오리고기', '사용 안 함'), ('콩·두부자반', '중국산'), ('아귀', '국내산'), ('꽃게장', '중국산'),
-    ('양(염소고기)', '사용 안 함'), ('대두', '수입산'), ('낙지', '국내산'), ('꽃게찜', '국내산'),
-    ('쌀(공기·죽·누룽지)', '국내산'), ('뱀장어(민물)', '사용 안 함'), ('고등어', '노르웨이산'), ('갈치', '국내산'),
-    ('쭈꾸미', '국내산'), ('미꾸라지', '사용 안 함'), ('방어', '국내산'), ('가리비', '국내산'),
-    ('우렁쉥이(멍게)', '국내산'), ('전복', '국내산'), ('떡갈비', '국내산 한돈'),
-]
 
 DRINKS_L = [('소주 <small>참이슬·잎새주·새로</small>', '5,000'), ('맥주 <small>카스·테라·켈리</small>', '5,000'),
             ('매실막걸리 <span class="menu-badge">BEST</span>', '9,000'), ('한라봉막걸리', '6,000'),
@@ -215,7 +207,7 @@ home = f'''<section class="hero" aria-labelledby="hero-title">
 </div>
 <div class="intro-copy">
 <p>예향한정식은 목포 평화광장에 자리한 남도 한정식 식당입니다. 목포의 식재료와 바다 음식이 어우러진 한 상을 선보입니다.</p>
-<p>국내 1호 보리굴비 명장이 직접 손질한 보리굴비와 제철 활어회, 낙지 요리까지. 가족과 나누는 식사부터 소중한 분을 모시는 자리까지, 음식에 집중할 수 있는 편안한 시간을 준비합니다.</p>
+<p>보리굴비 정식과 제철 활어회, 낙지 요리까지. 가족과 나누는 식사부터 소중한 분을 모시는 자리까지, 음식에 집중할 수 있는 편안한 시간을 준비합니다.</p>
 <div class="intro-facts">
 <div><b>평화광장</b><span>목포시 평화로 40</span></div>
 <div><b>남도음식명가</b><span>12년 연속 선정</span></div>
@@ -226,7 +218,7 @@ home = f'''<section class="hero" aria-labelledby="hero-title">
 </section>
 
 <section class="signature-section" aria-labelledby="signature-title">
-<div class="signature-photo"><img src="assets/table-angle.webp" alt="보리굴비와 활어회, 남도 반찬이 차려진 예향의 한 상" loading="lazy"></div>
+<div class="signature-photo"><img src="assets/table-hoe.webp" alt="활어회와 초밥, 남도 반찬이 차려진 예향의 한 상" loading="lazy"></div>
 <div class="signature-content">
 {eyebrow('OUR TABLE')}
 <h2 id="signature-title">남도의 맛을<br><em>천천히 즐기다</em></h2>
@@ -326,7 +318,7 @@ ld = {
     "acceptsReservations": "True", "sameAs": [NAVER_PLACE, INSTA, BLOG]
 }
 page('index.html', f'목포 한정식 · 보리굴비 맛집 | {NAME}',
-     '목포 평화광장 예향한정식 공식 홈페이지. 국내 1호 보리굴비 명장이 손질한 보리굴비 정식, 낙굴 정식, 목포식 한정식과 상견례·가족 모임 예약 안내.',
+     '목포 평화광장 예향한정식 공식 홈페이지. 남도음식명가 12년 연속 선정, 보리굴비 정식, 낙굴 정식, 목포식 한정식과 상견례·가족 모임 예약 안내.',
      home, extra_head=f'<script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>\n')
 
 # ------------------------------------------------------------------ ABOUT
@@ -338,8 +330,8 @@ about = inner_hero('about-hero', 'ABOUT YEHYANG', '정성을 담은<br>목포의
 <h2>한 상에 담긴<br><em>남도의 맛</em></h2>
 </div>
 <div class="intro-copy">
-<p>남도의 맛과 멋, 목포의 바다를 한 상에 담습니다. 예향한정식은 목포 평화광장에 자리한 한정식 식당으로, 직접 손질해 내는 보리굴비 정식과 제철 활어회, 낙지탕탕이·연포탕 같은 목포의 향토 음식이 이곳의 상차림을 이룹니다.</p>
-<p>풍부한 찬을 채운 정갈한 상차림에 ‘집밥의 정성’과 ‘전통 한식의 품격’을 함께 담고자 합니다. 굴비는 손님이 드시기 편하도록 자리에서 하나하나 손질해 드립니다.</p>
+<p>남도의 맛과 멋, 목포의 바다를 한 상에 담습니다. 예향한정식은 목포 평화광장에 자리한 한정식 식당으로, 보리굴비 정식과 제철 활어회, 낙지탕탕이·연포탕 같은 목포의 향토 음식이 이곳의 상차림을 이룹니다.</p>
+<p>풍부한 찬을 채운 정갈한 상차림에 ‘집밥의 정성’과 ‘전통 한식의 품격’을 함께 담고자 합니다.</p>
 <div class="intro-facts">
 <div><b>Since 1969</b><span>목포식 한정식</span></div>
 <div><b>국내 1호</b><span>보리굴비 명장</span></div>
@@ -350,11 +342,17 @@ about = inner_hero('about-hero', 'ABOUT YEHYANG', '정성을 담은<br>목포의
 </section>
 
 <section class="signature-section">
-<div class="signature-photo"><img src="assets/chef-award.webp" alt="농림축산식품부 장관상을 받은 예향한정식 오선영 대표" loading="lazy"></div>
+<div class="signature-photo"><img src="assets/chef-award.webp" alt="농림축산식품부 장관상 수상 기념 사진" loading="lazy"></div>
 <div class="signature-content">
-{eyebrow('THE CHEF')}
+{eyebrow('CERTIFICATES &amp; AWARDS')}
 <h2>대한민국이 인정한<br><em>한식의 명인</em></h2>
-<p>목포 조리명인 오선영 대표가 직접 보리굴비를 손질합니다. 한식·중식·양식 조리 자격을 갖추고 호텔조리학을 다시 공부할 만큼, 손님을 위한 맛을 꾸준히 연구해 왔습니다. 2026 대한민국 국제요리&amp;제과 경연대회에서 농림축산식품부 장관상을 받았습니다.</p>
+<ul class="cred-list">
+<li><span>자격</span>한식 · 중식 · 양식 조리 자격증</li>
+<li><span>인증</span>목포 조리명인 · 국내 1호 보리굴비 명장</li>
+<li><span>수상</span>2026 대한민국 국제요리&amp;제과 경연대회 농림축산식품부 장관상</li>
+<li><span>수상</span>보건복지부 장관상</li>
+<li><span>선정</span>남도음식명가 12년 연속 · 전남·목포 으뜸맛집</li>
+</ul>
 <a class="text-link" href="menu.html">메뉴 살펴보기 {ARROW}</a>
 </div>
 </section>
@@ -430,9 +428,9 @@ for c in COURSES:
 tabs_data = [
     ('nakgul', '낙굴 정식', '1인 40,000원', 'table-top', '낙지와 활어회, 초밥, 스끼, 보리굴비가 차례로 차려지는 예향의 판매 1위 상차림입니다.', ['낙지', '회', '초밥', '스끼', '굴비 大']),
     ('hongsam', '홍삼 정식', '1인 50,000원', 'hongsam', '홍어삼합에 낙지, 회·초밥, 보리굴비까지 목포의 맛을 모두 담았습니다.', ['홍어삼합', '낙지', '회', '초밥', '스끼', '굴비 大']),
-    ('myeongpum', '명품 정식', '1인 30,000원', 'hoe-gulbi', '활어회와 울금 초밥, 큼직한 보리굴비가 함께 나옵니다.', ['회', '초밥', '스끼', '굴비 大']),
+    ('myeongpum', '명품 정식', '1인 30,000원', 'myeongpum', '활어회와 울금 초밥, 큼직한 보리굴비가 함께 나옵니다.', ['회', '초밥', '스끼', '굴비 大']),
     ('set', '목포식 한정식', '2~5인 140,000원부터', 'spread', '활어회를 중심으로 지역 특산물과 제철 음식으로 한 상 가득 차려 드립니다.', ['활어회', '지역 특산물', '제철 음식']),
-    ('gulbi', '굴비 정식', '1인 20,000원 · 점심특선', 'gulbi-grill', '기본 반찬과 보리굴비. 울금밥을 울금물에 살짝 말아 굴비 한 점을 올려 드셔보세요.', ['기본반찬', '굴비 小']),
+    ('gulbi', '굴비 정식', '1인 20,000원 · 점심특선', 'gulbi-tab', '기본 반찬과 보리굴비. 울금밥을 울금물에 살짝 말아 굴비 한 점을 올려 드셔보세요.', ['기본반찬', '굴비 小']),
 ]
 tab_btns = ''.join(
     f'<button type="button" role="tab" id="tab-{k}" aria-controls="panel-{k}" aria-selected="{"true" if i == 0 else "false"}" tabindex="{0 if i == 0 else -1}">{n}</button>'
@@ -444,18 +442,17 @@ tab_panels = ''.join(f'''<div class="tab-panel" role="tabpanel" id="panel-{k}" a
 </div>
 ''' for i, (k, n, p, img, d, items) in enumerate(tabs_data))
 
-origin_html = ''.join(f'<div><b>{a}</b><span>{b}</span></div>' if a else '<div aria-hidden="true"></div>' for a, b in ORIGIN)
 
 menu = inner_hero('menu-hero', 'OUR MENU', '메뉴 안내', '정갈한 한 상에 담은 목포의 맛, 소중한 분들과 함께 나누세요.') + f'''
 <nav class="subnav" aria-label="메뉴 바로가기"><div class="wrap">
-<a href="#courses">정식 메뉴</a><a href="#mokpo-set">목포식 한정식</a><a href="#single">단품 요리</a><a href="#table-story">한 상의 이야기</a><a href="#special">도시락·계절</a><a href="#drinks">주류</a><a href="#origin">원산지</a>
+<a href="#courses">정식 메뉴</a><a href="#mokpo-set">목포식 한정식</a><a href="#single">단품 요리</a><a href="#table-story">한 상의 이야기</a><a href="#special">도시락·계절</a><a href="#drinks">주류</a>
 </div></nav>
 
 <section class="wrap inner-content">
 <div class="menu-intro">
 {eyebrow('WHY YEHYANG')}
 <h2>왜, 예향일까요?</h2>
-<p class="lead-copy">소중한 분을 대접하는 마음으로 한 상을 준비합니다. 국내 1호 보리굴비 명장이 손질한 보리굴비와 목포 바다의 제철 활어회, 낙지 요리를 정갈하게 담고, 함께 나누는 식사에 따뜻한 마음을 더합니다.</p>
+<p class="lead-copy">소중한 분을 대접하는 마음으로 한 상을 준비합니다. 보리굴비와 목포 바다의 제철 활어회, 낙지 요리를 정갈하게 담고, 함께 나누는 식사에 따뜻한 마음을 더합니다.</p>
 </div>
 
 <div id="courses" class="course-list" style="scroll-margin-top:30px">
@@ -496,11 +493,23 @@ menu = inner_hero('menu-hero', 'OUR MENU', '메뉴 안내', '정갈한 한 상�
 <section class="wrap inner-content">
 <section class="price-section" id="special" style="border-top:0;padding-top:0">
 <div class="price-title">{eyebrow('TAKE-OUT &amp; SEASON')}<h2>도시락 · 계절 메뉴</h2><p>행사·모임 도시락과 철따라 달라지는 한 상</p></div>
+<div>
+<article class="course-card inline" id="dosirak">
+<figure><img src="assets/dosirak.webp" alt="목포 프리미엄 한정식 도시락" loading="lazy"></figure>
+<div class="course-body">
+<div class="course-top"><span class="course-tier">TAKE-OUT</span><span class="rank-badge">NEW</span></div>
+<h3>목포 프리미엄 한정식 도시락</h3>
+<p class="course-price"><small>1개</small>20,000원</p>
+<p class="course-desc">정성 가득한 한 상을 도시락에 담았습니다. 세 가지 메인 요리를 한 도시락에 담아 모임·행사 도시락으로 좋습니다.</p>
+{chips(['보리굴비', '낙지호롱', '수제 떡갈비'])}
+<p class="course-foot">수량과 받으실 날짜·시간은 전화로 주문해 주세요.</p>
+</div>
+</article>
 <ul class="price-list">
-<li class="price-row"><strong>목포 프리미엄 한정식 도시락 <span class="menu-badge">NEW</span><span class="sub">고소한 보리굴비 · 쫄깃한 낙지호롱 · 육즙 가득 수제 떡갈비를 한 도시락에</span></strong><span class="price">20,000원</span></li>
 <li class="price-row"><strong>계절 메뉴 <span class="menu-badge">제철</span><span class="sub">목포를 대표하는 9미, 제철에만 맛볼 수 있는 맞춤형 한상차림 (철따라 달라질 수 있습니다)</span></strong><span class="price">40,000원</span></li>
 <li class="price-row"><strong>3분 간편 영광 찐 보리굴비 택배<span class="sub">집에서도 간편하게 즐기는 보리굴비, 전화로 주문받습니다</span></strong><span class="price"><a href="tel:{TEL}">전화 주문</a></span></li>
 </ul>
+</div>
 </section>
 
 <section class="price-section" id="drinks">
@@ -511,19 +520,10 @@ menu = inner_hero('menu-hero', 'OUR MENU', '메뉴 안내', '정갈한 한 상�
 </div>
 </section>
 
-<section class="price-section" id="origin">
-<div class="price-title">{eyebrow('ORIGIN')}<h2>원산지 안내</h2><p>쌀은 국내산만 사용합니다.</p></div>
-<div class="origin-grid">{origin_html}</div>
-</section>
-
-<div class="source-note">
-<p>메뉴와 가격은 2026년 11월 매장 메뉴판 기준입니다. 요리 구성은 계절과 재료 수급에 따라 달라질 수 있으니 방문 전 확인해 주세요.</p>
-<a class="button dark" href="tel:{TEL}">전화로 메뉴 확인하기</a>
-</div>
 </section>
 '''
 page('menu.html', f'메뉴 안내 · 보리굴비 정식·낙굴 정식 | {NAME}',
-     '홍삼 정식 50,000원 · 낙굴 정식 40,000원 · 명품 정식 30,000원 · 점심특선 굴비 정식 20,000원, 목포식 한정식 2~5인. 예향한정식 메뉴와 원산지를 확인하세요.', menu)
+     '홍삼 정식 50,000원 · 낙굴 정식 40,000원 · 명품 정식 30,000원 · 점심특선 굴비 정식 20,000원, 목포식 한정식 2~5인. 도시락·주류까지 예향한정식 메뉴를 확인하세요.', menu)
 
 # ------------------------------------------------------------------ SPACE
 space = inner_hero('space-hero', 'OUR SPACE', '공간 안내', '함께하는 인원에 맞춰, 편안한 만남의 공간을 준비합니다.') + f'''

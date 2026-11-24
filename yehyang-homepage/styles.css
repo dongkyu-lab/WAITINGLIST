@@ -216,3 +216,16 @@ html{-webkit-text-size-adjust:100%}body{overflow-x:hidden}
 @media(prefers-reduced-motion:reduce){.story-card{transition:none}}
 .space-hero{background-image:url('assets/hoe-platter.webp');background-position:center 50%}.news-hero{background-image:url('assets/spread.webp');background-position:center 50%}.reservation-hero{background-image:url('assets/table-top.webp');background-position:center 45%}
 body{background:var(--paper)}
+
+/* 禮香 현판형 로고 (Yuji Syuku, SIL OFL) */
+@font-face{font-family:'Yehyang Brush';src:url('assets/fonts/yehyang-brush.woff2') format('woff2');font-display:block;unicode-range:U+79AE,U+9999}
+.brand-mark{writing-mode:vertical-rl;width:48px;height:84px;font-family:'Yehyang Brush','Noto Serif KR',serif;font-size:1.72rem;line-height:1;letter-spacing:.12em;border:1px solid #c5a473;box-shadow:inset 0 0 0 3px #322e29,inset 0 0 0 4px rgba(197,164,115,.45);color:#ead2a6;padding:0}
+.brand{gap:16px}
+.footer-mark{display:inline-grid;place-items:center;writing-mode:vertical-rl;width:34px;height:60px;margin-right:14px;vertical-align:middle;border:1px solid #8f7651;color:#d9bf92;font-family:'Yehyang Brush','Noto Serif KR',serif;font-size:1.2rem;letter-spacing:.1em;line-height:1}
+.cred-list{list-style:none;margin:0 0 34px;padding:0;width:100%;max-width:460px;border-top:1px solid #d9cfc0}
+.cred-list li{display:grid;grid-template-columns:64px 1fr;gap:12px;padding:13px 0;border-bottom:1px solid #d9cfc0;font-size:.95rem;color:#4b433b;line-height:1.6}
+.cred-list span{font-size:.75rem;font-weight:700;letter-spacing:.12em;color:#a7664e;padding-top:3px}
+.course-card.inline{margin-bottom:26px}
+@media(max-width:800px){.brand-mark{width:40px;height:70px;font-size:1.42rem}.site-header .header-inner{height:88px}}
+.course-body h3,.story-card h3,.booking-card h3,.occasion-detail h2,.news-item h3{word-break:keep-all}
+.course-card.inline{grid-template-columns:40% 1fr}.course-card.inline .course-body{padding:32px 30px}.course-card.inline h3{font-size:1.6rem}
