@@ -214,7 +214,7 @@ html{-webkit-text-size-adjust:100%}body{overflow-x:hidden}
 }
 @media(max-width:480px){.story-grid{grid-template-columns:1fr}.story-card p{display:block}.feature-grid{grid-template-columns:1fr}.course-price{font-size:1.45rem}.promo-copy strong{font-size:1.35rem}}
 @media(prefers-reduced-motion:reduce){.story-card{transition:none}}
-.space-hero{background-image:url('assets/hoe-platter.webp');background-position:center 50%}.news-hero{background-image:url('assets/spread.webp');background-position:center 50%}.reservation-hero{background-image:url('assets/table-top.webp');background-position:center 45%}
+.space-hero{background-image:url('assets/hoe-flower-wide.webp');background-position:center 50%}.news-hero{background-image:url('assets/scallop-samhap.webp');background-position:center 50%}.reservation-hero{background-image:url('assets/course-nakgul.webp');background-position:center 45%}
 body{background:var(--paper)}
 
 /* 禮香 현판형 로고 (Yuji Syuku, SIL OFL) */
@@ -246,3 +246,17 @@ body{background:var(--paper)}
 .hero-dot:focus-visible{outline:2px solid #e3c598;outline-offset:4px}
 @media(max-width:800px){.hero-bottom span.hero-dots{display:flex}}
 @media(prefers-reduced-motion:reduce){.hero-slide,.hero-slide.is-active{transition:opacity .01s;transform:none}}
+/* 모바일 가독성: 한글 단어 단위 줄바꿈, 너무 작은 글자 키우기 */
+body{word-break:keep-all;overflow-wrap:break-word}
+.price-row strong small,.price small,.course-price small{white-space:nowrap}
+@media(max-width:800px){
+ .brand-text small{font-size:.72rem;letter-spacing:.02em}
+ .menu-badge{font-size:.72rem}
+ .price-row strong{min-width:0}
+ .price-row .sub{font-size:.85rem;line-height:1.6}
+ .inner-hero p,.hero p{word-break:keep-all}
+}
+@media(max-width:360px){.brand-text strong{font-size:1.08rem}.brand-text small{font-size:.72rem;letter-spacing:0}.brand{gap:12px}}
+@media(max-width:800px){.course-card.inline{grid-template-columns:1fr}.course-card.inline .course-body{padding:28px 22px}}
+@media(max-width:480px){.hero h1{font-size:clamp(2.35rem,11.2vw,3.2rem);line-height:1.32}}
+@media(max-width:380px){.eyebrow{letter-spacing:.14em;gap:10px}.eyebrow .line{width:22px}.hero .eyebrow{font-size:.7rem}}
