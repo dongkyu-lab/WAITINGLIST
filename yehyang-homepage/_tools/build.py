@@ -46,7 +46,7 @@ def head(title, desc, path, extra_head=''):
 <meta property="og:site_name" content="{NAME}">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{desc}">
-<meta property="og:image" content="assets/hero-table.webp">
+<meta property="og:image" content="assets/spread.webp">
 <meta property="og:locale" content="ko_KR">
 <meta name="theme-color" content="#322e29">
 <link rel="icon" type="image/png" href="assets/favicon.png">
@@ -249,9 +249,9 @@ home = f'''<section class="hero" aria-labelledby="hero-title">
 <p>한 상의 정성과 함께하는 순간을 만나보세요.</p>
 </div>
 <div class="story-grid">
-<a class="story-card" href="menu.html#table-story"><figure><img src="assets/table-top.webp" alt="한 상 가득 차려진 예향 정식" loading="lazy"></figure><div><span>MENU</span><h3>한 상의 이야기</h3><p>정식별 상차림을 사진으로 살펴보세요.</p><b>메뉴 보기 →</b></div></a>
+<a class="story-card" href="menu.html#table-story"><figure><img src="assets/table-check.webp" alt="한 상 가득 차려진 예향 정식" loading="lazy"></figure><div><span>MENU</span><h3>한 상의 이야기</h3><p>정식별 상차림을 사진으로 살펴보세요.</p><b>메뉴 보기 →</b></div></a>
 <a class="story-card" href="space.html"><figure><img src="assets/hoe-platter.webp" alt="정갈하게 담아낸 활어회" loading="lazy"></figure><div><span>SPACE</span><h3>전 좌석 개별 룸</h3><p>룸·별실 12실, 최대 90명까지.</p><b>공간 보기 →</b></div></a>
-<a class="story-card" href="gathering.html"><figure><img src="assets/spread.webp" alt="여럿이 함께하는 한정식 상차림" loading="lazy"></figure><div><span>GATHERINGS</span><h3>모임별 안내</h3><p>상견례·가족 모임·접대·회식.</p><b>모임 안내 →</b></div></a>
+<a class="story-card" href="gathering.html"><figure><img src="assets/table-course.webp" alt="여럿이 함께하는 한정식 상차림" loading="lazy"></figure><div><span>GATHERINGS</span><h3>모임별 안내</h3><p>상견례·가족 모임·접대·회식.</p><b>모임 안내 →</b></div></a>
 <a class="story-card" href="news.html"><figure><img src="assets/dosirak.webp" alt="목포 프리미엄 한정식 도시락" loading="lazy"></figure><div><span>NEWS</span><h3>예향 소식</h3><p>새 메뉴와 이벤트, 휴무 안내.</p><b>소식 보기 →</b></div></a>
 </div>
 </div>
@@ -428,7 +428,7 @@ for c in COURSES:
 tabs_data = [
     ('nakgul', '낙굴 정식', '1인 40,000원', 'table-top', '낙지와 활어회, 초밥, 스끼, 보리굴비가 차례로 차려지는 예향의 판매 1위 상차림입니다.', ['낙지', '회', '초밥', '스끼', '굴비 大']),
     ('hongsam', '홍삼 정식', '1인 50,000원', 'hongsam', '홍어삼합에 낙지, 회·초밥, 보리굴비까지 목포의 맛을 모두 담았습니다.', ['홍어삼합', '낙지', '회', '초밥', '스끼', '굴비 大']),
-    ('myeongpum', '명품 정식', '1인 30,000원', 'myeongpum', '활어회와 울금 초밥, 큼직한 보리굴비가 함께 나옵니다.', ['회', '초밥', '스끼', '굴비 大']),
+    ('myeongpum', '명품 정식', '1인 30,000원', 'myeongpum', '신선한 활어회와 울금 초밥, 다양한 스끼에 보리굴비가 함께 나옵니다.', ['회', '초밥', '스끼', '굴비 大']),
     ('set', '목포식 한정식', '2~5인 140,000원부터', 'spread', '활어회를 중심으로 지역 특산물과 제철 음식으로 한 상 가득 차려 드립니다.', ['활어회', '지역 특산물', '제철 음식']),
     ('gulbi', '굴비 정식', '1인 20,000원 · 점심특선', 'table-check', '기본 반찬과 보리굴비. 울금밥을 울금물에 살짝 말아 굴비 한 점을 올려 드셔보세요.', ['기본반찬', '굴비 小']),
 ]
