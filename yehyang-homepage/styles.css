@@ -230,3 +230,7 @@ body{background:var(--paper)}
 .course-body h3,.story-card h3,.booking-card h3,.occasion-detail h2,.news-item h3{word-break:keep-all}
 .course-card.inline{grid-template-columns:40% 1fr}.course-card.inline .course-body{padding:32px 30px}.course-card.inline h3{font-size:1.6rem}
 .map-embed{position:absolute;inset:0;width:100%;height:100%;border:0;z-index:1;background:transparent}
+/* 첫 화면: 버튼과 하단 문구가 겹치지 않도록 내용에 맞춰 높이 확보 */
+.hero{height:auto;max-height:none}
+.hero-content{padding-bottom:130px}
+@media(max-width:800px){.hero-content{padding-bottom:100px}}
