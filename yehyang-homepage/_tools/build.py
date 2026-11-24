@@ -4,6 +4,8 @@ import json, os, sys
 
 OUT = sys.argv[1]
 NAME = '예향한정식 목포보리굴비 평화광장점'
+# 홈페이지 주소: 도메인을 새로 연결하면 여기만 바꾸고 다시 생성하세요 (카카오톡·검색 미리보기에 쓰임)
+SITE = 'https://yehyang-mokpo.netlify.app'
 TEL = '061-262-9595'
 TEL2 = '0507-1417-9597'
 ADDR = '전남 목포시 평화로 40 (상동)'
@@ -46,8 +48,15 @@ def head(title, desc, path, extra_head=''):
 <meta property="og:site_name" content="{NAME}">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{desc}">
-<meta property="og:image" content="assets/course-special.webp">
+<meta property="og:url" content="{SITE}/{'' if path == 'index.html' else path}">
+<meta property="og:image" content="{SITE}/assets/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="예향한정식 한상차림">
 <meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{SITE}/assets/og-image.jpg">
+<link rel="canonical" href="{SITE}/{'' if path == 'index.html' else path}">
 <meta name="theme-color" content="#322e29">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/favicon.png">
