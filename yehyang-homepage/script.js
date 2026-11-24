@@ -37,4 +37,27 @@ document.querySelectorAll('[data-tabs]').forEach(group => {
   });
 });
 
+/* 첫 화면 사진 슬라이드 */
+(() => {
+  const slides = [...document.querySelectorAll('.hero-slide')];
+  const dots = [...document.querySelectorAll('.hero-dot')];
+  if (slides.length < 2) return;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const load = el => { if (el.dataset.bg) { el.style.backgroundImage = `url('${el.dataset.bg}')`; delete el.dataset.bg; } };
+  window.addEventListener('load', () => slides.forEach(load));
+  let current = 0, timer = null;
+  const show = i => {
+    load(slides[i]);
+    slides[current].classList.remove('is-active'); dots[current]?.classList.remove('is-active');
+    current = i;
+    slides[current].classList.add('is-active'); dots[current]?.classList.add('is-active');
+  };
+  const next = () => show((current + 1) % slides.length);
+  const start = () => { if (!reduce && !timer) timer = setInterval(next, 6000); };
+  const stop = () => { clearInterval(timer); timer = null; };
+  dots.forEach((d, i) => d.addEventListener('click', () => { stop(); show(i); start(); }));
+  document.addEventListener('visibilitychange', () => document.hidden ? stop() : start());
+  start();
+})();
+
 document.querySelectorAll('[data-year]').forEach(el => { el.textContent = new Date().getFullYear(); });

@@ -46,7 +46,7 @@ def head(title, desc, path, extra_head=''):
 <meta property="og:site_name" content="{NAME}">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{desc}">
-<meta property="og:image" content="assets/horong.webp">
+<meta property="og:image" content="assets/horong-plate.webp">
 <meta property="og:locale" content="ko_KR">
 <meta name="theme-color" content="#322e29">
 <link rel="icon" type="image/png" href="assets/favicon.png">
@@ -141,7 +141,7 @@ COURSES = [
     dict(id='gulbi', tier='20,000원 정식', rank='점심 특선', name='목포식 굴비 정식', fish='부세', price='20,000', img='table-gulbi-horong',
          desc='정갈한 기본 반찬과 해풍에 맛 들인 보리굴비 한 마리. 점심에 가볍고 든든하게 즐기는 목포식 보리굴비 정식입니다.',
          items=['기본반찬', '굴비 小'], foot='※ 점심 특선 메뉴입니다.'),
-    dict(id='myeongpum', tier='30,000원 정식', rank='', name='명품 정식', fish='부세', price='30,000', img='myeongpum',
+    dict(id='myeongpum', tier='30,000원 정식', rank='', name='명품 정식', fish='부세', price='30,000', img='hoe-flower',
          desc='신선한 활어회와 울금 초밥, 다양한 스끼에 큼직한 보리굴비가 함께하는 정성 가득한 한 상.',
          items=['회', '초밥', '스끼', '굴비 大']),
     dict(id='tteokgalbi', tier='30,000원 정식', rank='', name='떡갈비랑 굴비랑', fish='부세', price='30,000', img='tteokgalbi',
@@ -182,6 +182,13 @@ def price_rows(rows):
 
 # ------------------------------------------------------------------ HOME
 home = f'''<section class="hero" aria-labelledby="hero-title">
+<div class="hero-slides" aria-hidden="true">
+<div class="hero-slide is-active" style="background-image:url('assets/horong-plate.webp')"></div>
+<div class="hero-slide" data-bg="assets/course-nakgul.webp"></div>
+<div class="hero-slide" data-bg="assets/hoe-flower.webp"></div>
+<div class="hero-slide" data-bg="assets/course-special.webp"></div>
+<div class="hero-slide" data-bg="assets/course-yehyang.webp"></div>
+</div>
 <div class="hero-shade"></div>
 <div class="wrap hero-content">
 {eyebrow('MOKPO · NAMDO DINING', light=True)}
@@ -192,7 +199,7 @@ home = f'''<section class="hero" aria-labelledby="hero-title">
 <a class="text-link light-link" href="menu.html">음식 둘러보기 {ARROW}</a>
 </div>
 </div>
-<div class="wrap hero-bottom"><span>YEHYANG KOREAN DINING · SINCE 1969</span><span>전남 목포시 평화로 40</span></div>
+<div class="wrap hero-bottom"><span>YEHYANG KOREAN DINING · SINCE 1969</span><span class="hero-dots" role="group" aria-label="사진 넘기기"><button type="button" class="hero-dot is-active" aria-label="1번째 사진"></button><button type="button" class="hero-dot" aria-label="2번째 사진"></button><button type="button" class="hero-dot" aria-label="3번째 사진"></button><button type="button" class="hero-dot" aria-label="4번째 사진"></button><button type="button" class="hero-dot" aria-label="5번째 사진"></button></span><span>전남 목포시 평화로 40</span></div>
 </section>
 
 <section class="promo-band" aria-label="연말 모임 안내">
@@ -434,7 +441,7 @@ set_cards = ''.join(course_card(c, unit='한상', foot_base='한상차림 기준
 tabs_data = [
     ('nakgul', '낙굴 정식', '1인 40,000원 · 판매 1위', 'course-nakgul', '낙지호롱과 활어회, 초밥, 스끼, 보리굴비가 한 상에 차려지는 예향의 판매 1위 상차림입니다.', ['낙지호롱', '회', '초밥', '스끼', '굴비 大']),
     ('gulbi', '목포식 굴비 정식', '1인 20,000원 · 점심 특선', 'table-gulbi-horong', '기본 반찬과 보리굴비. 울금밥을 울금물에 살짝 말아 굴비 한 점을 올려 드셔보세요.', ['기본반찬', '굴비 小']),
-    ('myeongpum', '명품 정식', '1인 30,000원', 'myeongpum', '신선한 활어회와 울금 초밥, 다양한 스끼에 보리굴비가 함께 나옵니다.', ['회', '초밥', '스끼', '굴비 大']),
+    ('myeongpum', '명품 정식', '1인 30,000원', 'hoe-flower', '신선한 활어회와 울금 초밥, 다양한 스끼에 보리굴비가 함께 나옵니다.', ['회', '초밥', '스끼', '굴비 大']),
     ('set-yehyang', '예향 정식', '3~4인 한상 160,000원', 'course-yehyang', '활어회와 홍어삼합, 가리비구이, 초밥과 제철 찬을 한 상 가득 차려 드립니다.', ['활어회', '홍어삼합', '가리비구이', '초밥']),
     ('set-special', '예향 특정식', '4~5인 한상 200,000원', 'course-special', '꽃 활어회와 제철 해산물 모둠이 더해진 예향의 가장 풍성한 한상입니다.', ['꽃 활어회', '제철 해산물', '초밥']),
 ]
