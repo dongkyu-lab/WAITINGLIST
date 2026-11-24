@@ -46,7 +46,7 @@ def head(title, desc, path, extra_head=''):
 <meta property="og:site_name" content="{NAME}">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{desc}">
-<meta property="og:image" content="assets/bori-gulbi.webp">
+<meta property="og:image" content="assets/hero-table.webp">
 <meta property="og:locale" content="ko_KR">
 <meta name="theme-color" content="#322e29">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23322e29'/%3E%3Crect x='6' y='6' width='52' height='52' fill='none' stroke='%23c5a473' stroke-width='2'/%3E%3Ctext x='32' y='41' font-size='22' text-anchor='middle' fill='%23e3c79c' font-family='serif'%3E%EC%98%88%ED%96%A5%3C/text%3E%3C/svg%3E">
@@ -226,7 +226,7 @@ home = f'''<section class="hero" aria-labelledby="hero-title">
 </section>
 
 <section class="signature-section" aria-labelledby="signature-title">
-<div class="signature-photo"><img src="assets/namdo-table.webp" alt="보리굴비와 남도 반찬이 차려진 한정식 상" loading="lazy"></div>
+<div class="signature-photo"><img src="assets/table-angle.webp" alt="보리굴비와 활어회, 남도 반찬이 차려진 예향의 한 상" loading="lazy"></div>
 <div class="signature-content">
 {eyebrow('OUR TABLE')}
 <h2 id="signature-title">남도의 맛을<br><em>천천히 즐기다</em></h2>
@@ -546,7 +546,7 @@ space = inner_hero('space-hero', 'OUR SPACE', '공간 안내', '함께하는 인
 </section>
 
 <section class="signature-section">
-<div class="signature-photo"><img src="assets/namdo-table.webp" alt="창가 룸에 차려진 한정식 상" loading="lazy"></div>
+<div class="signature-photo"><img src="assets/group-table.webp" alt="여럿이 함께 앉는 단체석에 차려진 한정식 상" loading="lazy"></div>
 <div class="signature-content">
 {eyebrow('FOR EVERY GATHERING')}
 <h2>작은 만남부터<br><em>큰 모임까지</em></h2>
