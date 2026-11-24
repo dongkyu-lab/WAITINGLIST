@@ -37,20 +37,4 @@ document.querySelectorAll('[data-tabs]').forEach(group => {
   });
 });
 
-/* 오시는 길 지도 */
-const mapEl = document.getElementById('visit-map');
-if (mapEl && window.L) {
-  const pos = [34.794817, 126.4299216];
-  const map = L.map(mapEl, { scrollWheelZoom: false }).setView(pos, 17);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap 기여자'
-  }).addTo(map);
-  L.marker(pos, {
-    icon: L.divIcon({ className: 'restaurant-marker', html: '예향한정식', iconSize: [96, 34], iconAnchor: [48, 40] })
-  }).addTo(map);
-  const ph = mapEl.querySelector('.map-placeholder');
-  if (ph) ph.remove();
-}
-
 document.querySelectorAll('[data-year]').forEach(el => { el.textContent = new Date().getFullYear(); });

@@ -141,7 +141,7 @@ COURSES = [
     dict(id='hongsam', tier='예향 특품 메뉴', rank='만족도 1위', name='홍삼 정식', fish='부세', price='50,000', img='samhap',
          desc='목포를 대표하는 홍어삼합과 낙지, 활어회와 초밥, 큼직한 보리굴비까지 한 번에 즐기는 예향의 가장 풍성한 정식입니다.',
          items=['홍어삼합', '낙지', '회', '초밥', '스끼', '굴비 大']),
-    dict(id='nakgul', tier='예향 진품 메뉴', rank='판매 1위', name='낙굴 정식', fish='부세', price='40,000', img='tangtang',
+    dict(id='nakgul', tier='예향 진품 메뉴', rank='판매 1위', name='낙굴 정식', fish='부세', price='40,000', img='table-top',
          desc='목포 낙지와 보리굴비의 만남. 낙지탕탕이·낙지호롱과 활어회, 보리굴비가 함께 나오는 요즘 가장 많이 찾으시는 상차림입니다.',
          items=['낙지', '회', '초밥', '스끼', '굴비 大']),
     dict(id='myeongpum', tier='예향 진품 메뉴', rank='', name='명품 정식', fish='부세', price='30,000', img='myeongpum',
@@ -150,7 +150,7 @@ COURSES = [
     dict(id='tteokgalbi', tier='예향 진품 메뉴', rank='', name='떡갈비랑 굴비랑', fish='부세', price='30,000', img='tteokgalbi',
          desc='국내산 한돈으로 직접 빚은 수제 떡갈비와 보리굴비를 함께. 어르신과 아이가 함께하는 가족 식사에 특히 좋습니다.',
          items=['수제 한돈 떡갈비', '초밥', '스끼', '굴비 大']),
-    dict(id='gulbi', tier='점심 특선', rank='', name='굴비 정식', fish='부세', price='20,000', img='table-check',
+    dict(id='gulbi', tier='점심 특선', rank='', name='굴비 정식', fish='부세', price='20,000', img='gulbi-table',
          desc='정갈한 기본 반찬과 해풍에 맛 들인 보리굴비 한 마리. 점심에 가볍고 든든하게 즐기는 목포식 보리굴비 정식입니다.',
          items=['기본반찬', '굴비 小'], foot='※ 점심특선 메뉴입니다.'),
 ]
@@ -430,7 +430,7 @@ tabs_data = [
     ('hongsam', '홍삼 정식', '1인 50,000원', 'hongsam', '홍어삼합에 낙지, 회·초밥, 보리굴비까지 목포의 맛을 모두 담았습니다.', ['홍어삼합', '낙지', '회', '초밥', '스끼', '굴비 大']),
     ('myeongpum', '명품 정식', '1인 30,000원', 'myeongpum', '신선한 활어회와 울금 초밥, 다양한 스끼에 보리굴비가 함께 나옵니다.', ['회', '초밥', '스끼', '굴비 大']),
     ('set', '목포식 한정식', '2~5인 140,000원부터', 'spread', '활어회를 중심으로 지역 특산물과 제철 음식으로 한 상 가득 차려 드립니다.', ['활어회', '지역 특산물', '제철 음식']),
-    ('gulbi', '굴비 정식', '1인 20,000원 · 점심특선', 'table-check', '기본 반찬과 보리굴비. 울금밥을 울금물에 살짝 말아 굴비 한 점을 올려 드셔보세요.', ['기본반찬', '굴비 小']),
+    ('gulbi', '굴비 정식', '1인 20,000원 · 점심특선', 'gulbi-table', '기본 반찬과 보리굴비. 울금밥을 울금물에 살짝 말아 굴비 한 점을 올려 드셔보세요.', ['기본반찬', '굴비 小']),
 ]
 tab_btns = ''.join(
     f'<button type="button" role="tab" id="tab-{k}" aria-controls="panel-{k}" aria-selected="{"true" if i == 0 else "false"}" tabindex="{0 if i == 0 else -1}">{n}</button>'
@@ -704,11 +704,12 @@ visit = inner_hero('visit-hero', 'FIND US', '오시는 길', '소중한 분들�
 <p>{NAME} · 목포 평화광장 바로 앞</p>
 </div>
 <div class="map-frame">
-<div class="visit-map" id="visit-map" role="region" aria-label="예향한정식 위치 지도">
+<div class="visit-map" id="visit-map">
 <div class="map-placeholder"><strong>목포 평화로 40</strong><p>매장 위치와 길 안내를 확인하세요.</p><a class="button dark" href="{NAVER_MAP}" target="_blank" rel="noopener">네이버 지도 열기</a></div>
+<iframe class="map-embed" title="예향한정식 위치 지도" src="https://maps.google.com/maps?q=34.794817,126.4299216&amp;hl=ko&amp;z=17&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
 </div>
 </div>
-<p class="map-help">지도 데이터 © OpenStreetMap 기여자 · 네이버 지도에 <b>[목포 예향]</b>을 검색하면 쉽게 찾아오실 수 있습니다.</p>
+<p class="map-help">네이버 지도에 <b>[목포 예향]</b>을 검색하면 쉽게 찾아오실 수 있습니다.</p>
 
 <div class="visit-detail-grid">
 <div class="visit-detail"><span>ADDRESS</span><h3>매장 주소</h3><p>{ADDR}<br>지번 · 목포시 상동 1153-1</p></div>
@@ -761,15 +762,14 @@ visit = inner_hero('visit-hero', 'FIND US', '오시는 길', '소중한 분들�
 leaflet_css = '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">\n'
 leaflet_js = '<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>\n'
 page('visit.html', f'오시는 길 · 목포시 평화로 40 | {NAME}',
-     '예향한정식 주소·지도·길찾기와 영업시간 안내. 전남 목포시 평화로 40 (평화광장 앞), 예약 문의 061-262-9595. 평화광장 무료 공영주차장 이용.', visit,
-     extra_head=leaflet_css, extra_scripts=leaflet_js)
+     '예향한정식 주소·지도·길찾기와 영업시간 안내. 전남 목포시 평화로 40 (평화광장 앞), 예약 문의 061-262-9595. 평화광장 무료 공영주차장 이용.', visit)
 
 # ------------------------------------------------------------------ RESERVATION
 reservation = inner_hero('reservation-hero', 'RESERVATION', '예약 · 문의', '편하신 방법으로, 소중한 만남을 준비하세요.') + f'''
 <section class="wrap inner-content">
 <div class="menu-intro">
 {eyebrow('HOW TO BOOK')}
-<h2>어떤 방법으로 예약하시겠어요?</h2>
+<h2>예약</h2>
 <p>네이버 예약과 전화로 안내합니다.</p>
 </div>
 <div class="booking-grid">
