@@ -217,8 +217,8 @@ html{-webkit-text-size-adjust:100%}body{overflow-x:hidden}
 .space-hero{background-image:url('assets/hoe-flower-wide.webp');background-position:center 50%}.news-hero{background-image:url('assets/scallop-samhap.webp');background-position:center 50%}.reservation-hero{background-image:url('assets/course-nakgul.webp');background-position:center 45%}
 body{background:var(--paper)}
 
-/* 禮香 현판형 로고 (Yuji Syuku, SIL OFL) */
-@font-face{font-family:'Yehyang Brush';src:url('assets/fonts/yehyang-brush.woff2') format('woff2');font-display:block;unicode-range:U+79AE,U+9999}
+/* 藝鄕 현판형 로고 (Yuji Syuku, SIL OFL) */
+@font-face{font-family:'Yehyang Brush';src:url('assets/fonts/yehyang-brush.woff2') format('woff2');font-display:block;unicode-range:U+85DD,U+9115}
 .brand-mark{writing-mode:vertical-rl;width:48px;height:84px;font-family:'Yehyang Brush','Noto Serif KR',serif;font-size:1.72rem;line-height:1;letter-spacing:.12em;border:1px solid #c5a473;box-shadow:inset 0 0 0 3px #322e29,inset 0 0 0 4px rgba(197,164,115,.45);color:#ead2a6;padding:0}
 .brand{gap:16px}
 .footer-mark{display:inline-grid;place-items:center;writing-mode:vertical-rl;width:34px;height:60px;margin-right:14px;vertical-align:middle;border:1px solid #8f7651;color:#d9bf92;font-family:'Yehyang Brush','Noto Serif KR',serif;font-size:1.2rem;letter-spacing:.1em;line-height:1}

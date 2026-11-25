@@ -77,7 +77,7 @@ def header(current):
 <header class="site-header" id="top">
 <div class="header-inner">
 <a class="brand" href="index.html" aria-label="{NAME} 홈">
-<span class="brand-mark" aria-hidden="true">禮香</span>
+<span class="brand-mark" aria-hidden="true">藝鄕</span>
 <span class="brand-text"><strong>예향한정식</strong><small>목포보리굴비 평화광장점</small></span>
 </a>
 <nav class="desktop-nav" aria-label="주요 메뉴">
@@ -99,7 +99,7 @@ def footer(extra_scripts=''):
     return f'''<footer class="site-footer">
 <div class="wrap footer-inner">
 <div>
-<div class="footer-brand"><span class="footer-mark" aria-hidden="true">禮香</span>{NAME}</div>
+<div class="footer-brand"><span class="footer-mark" aria-hidden="true">藝鄕</span>{NAME}</div>
 <p>{ADDR} · 예약 문의 <a href="tel:{TEL}">{TEL}</a><br>매일 11:00 – 21:00 · 브레이크타임 14:30 – 17:00 · 라스트오더 20:00</p>
 <p><a href="{NAVER_PLACE}" target="_blank" rel="noopener">네이버 플레이스</a> · <a href="{INSTA}" target="_blank" rel="noopener">인스타그램</a> · <a href="{BLOG}" target="_blank" rel="noopener">블로그</a> · <a href="{MOKPO_TOUR}" target="_blank" rel="noopener">목포문화관광</a></p>
 </div>
