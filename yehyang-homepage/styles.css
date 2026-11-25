@@ -260,3 +260,34 @@ body{word-break:keep-all;overflow-wrap:break-word}
 @media(max-width:800px){.course-card.inline{grid-template-columns:1fr}.course-card.inline .course-body{padding:28px 22px}}
 @media(max-width:480px){.hero h1{font-size:clamp(2.35rem,11.2vw,3.2rem);line-height:1.32}}
 @media(max-width:380px){.eyebrow{letter-spacing:.14em;gap:10px}.eyebrow .line{width:22px}.hero .eyebrow{font-size:.7rem}}
+/* 수상 · 인증 경력 */
+.chef-name{font-size:1rem!important;color:#4b433b!important;margin:-6px 0 22px!important}
+.chef-name b{font-family:'Noto Serif KR',serif;font-size:1.3rem;font-weight:600;color:#302b26;margin-left:4px}
+.chef-name small{font-size:.8rem;color:#8a8078;margin-left:6px;letter-spacing:.04em}
+.awards-section{background:var(--paper)}
+.awards-top{display:grid;grid-template-columns:1.25fr 1fr;gap:6%;margin-bottom:60px}
+.awards-sub{font-family:'Noto Sans KR',sans-serif;font-size:.82rem;font-weight:700;letter-spacing:.08em;color:#a7664e;margin:0 0 14px}
+.award-timeline{list-style:none;margin:0;padding:0;border-top:2px solid #4a3830}
+.award-timeline li{display:grid;grid-template-columns:96px 1fr auto;gap:18px;align-items:baseline;padding:18px 0;border-bottom:1px solid var(--line)}
+.award-timeline time{font-family:'Noto Serif KR',serif;font-size:1.15rem;color:#965b45;font-weight:600;font-variant-numeric:tabular-nums}
+.award-timeline b{font-family:'Noto Serif KR',serif;font-size:1.14rem;font-weight:500;color:#302b26;line-height:1.5}
+.award-timeline span{font-size:.84rem;color:#6a6259;white-space:nowrap;border:1px solid #d8c9b6;padding:3px 10px;border-radius:20px}
+.award-timeline.cert li{grid-template-columns:130px 1fr}
+.award-timeline.cert time{font-size:1rem}
+.honor-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.honor-cols>div{background:#f5f1e9;padding:28px 28px 22px}
+.honor-list{list-style:none;margin:0;padding:0}
+.honor-list li{position:relative;padding:9px 0 9px 16px;font-size:.94rem;color:#3f3832;border-bottom:1px dashed #dccfbe;line-height:1.55}
+.honor-list li:last-child{border-bottom:0}
+.honor-list li:before{content:'';position:absolute;left:0;top:18px;width:6px;height:6px;background:#965b45;transform:rotate(45deg)}
+@media(max-width:800px){
+ .awards-top{grid-template-columns:1fr;gap:40px;margin-bottom:40px}
+ .award-timeline li{grid-template-columns:62px 1fr;gap:4px 14px;padding:15px 0}
+ .award-timeline span{grid-column:2;justify-self:start;margin-top:4px;font-size:.78rem}
+ .award-timeline time{font-size:1.02rem}
+ .award-timeline b{font-size:1.02rem}
+ .award-timeline.cert li{grid-template-columns:104px 1fr}
+ .award-timeline.cert time{font-size:.9rem}
+ .honor-cols{grid-template-columns:1fr;gap:14px}
+ .honor-cols>div{padding:22px 20px 16px}
+}

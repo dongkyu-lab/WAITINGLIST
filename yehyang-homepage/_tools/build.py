@@ -197,7 +197,7 @@ home = f'''<section class="hero" aria-labelledby="hero-title">
 <div class="hero-slides" aria-hidden="true">
 <div class="hero-slide is-active" style="background-image:url('assets/course-special.webp');background-position:center 50%"></div>
 <div class="hero-slide" data-bg="assets/store-front.webp" style="background-position:center 38%"></div>
-<div class="hero-slide" data-bg="assets/store-room.webp" style="background-position:center 55%"></div>
+<div class="hero-slide" data-bg="assets/store-setting.webp" style="background-position:center 40%"></div>
 <div class="hero-slide" data-bg="assets/course-nakgul.webp" style="background-position:center 50%"></div>
 <div class="hero-slide" data-bg="assets/hoe-flower.webp" style="background-position:center 50%"></div>
 </div>
@@ -233,7 +233,7 @@ home = f'''<section class="hero" aria-labelledby="hero-title">
 <p>보리굴비 정식과 제철 활어회, 낙지 요리까지. 가족과 나누는 식사부터 소중한 분을 모시는 자리까지, 음식에 집중할 수 있는 편안한 시간을 준비합니다.</p>
 <div class="intro-facts">
 <div><b>평화광장</b><span>목포시 평화로 40</span></div>
-<div><b>남도음식명가</b><span>12년 연속 선정</span></div>
+<div><b>제18호 명인</b><span>목포음식 명인 · 한식대가</span></div>
 <div><b>전 좌석 룸</b><span>2인부터 90인까지</span></div>
 </div>
 </div>
@@ -273,7 +273,7 @@ home = f'''<section class="hero" aria-labelledby="hero-title">
 </div>
 <div class="story-grid">
 <a class="story-card" href="menu.html#table-story"><figure><img src="assets/course-special.webp" alt="한 상 가득 차려진 예향 정식" loading="lazy"></figure><div><span>MENU</span><h3>한 상의 이야기</h3><p>정식별 상차림을 사진으로 살펴보세요.</p><b>메뉴 보기 →</b></div></a>
-<a class="story-card" href="space.html"><figure><img src="assets/store-room.webp" alt="예향한정식 단체석 내부" loading="lazy"></figure><div><span>SPACE</span><h3>전 좌석 개별 룸</h3><p>룸·별실 12실, 최대 90명까지.</p><b>공간 보기 →</b></div></a>
+<a class="story-card" href="space.html"><figure><img src="assets/store-setting.webp" alt="손님 맞을 상을 차리는 예향한정식 단체석" loading="lazy"></figure><div><span>SPACE</span><h3>전 좌석 개별 룸</h3><p>룸·별실 12실, 최대 90명까지.</p><b>공간 보기 →</b></div></a>
 <a class="story-card" href="gathering.html"><figure><img src="assets/hoe-flower-wide.webp" alt="여럿이 함께하는 한정식 상차림" loading="lazy"></figure><div><span>GATHERINGS</span><h3>모임별 안내</h3><p>상견례·가족 모임·접대·회식.</p><b>모임 안내 →</b></div></a>
 <a class="story-card" href="news.html"><figure><img src="assets/dosirak.webp" alt="목포 프리미엄 한정식 도시락" loading="lazy"></figure><div><span>NEWS</span><h3>예향 소식</h3><p>새 메뉴와 이벤트, 휴무 안내.</p><b>소식 보기 →</b></div></a>
 </div>
@@ -357,7 +357,7 @@ about = inner_hero('about-hero', 'ABOUT YEHYANG', '정성을 담은<br>목포의
 <p>풍부한 찬을 채운 정갈한 상차림에 ‘집밥의 정성’과 ‘전통 한식의 품격’을 함께 담고자 합니다.</p>
 <div class="intro-facts">
 <div><b>Since 1969</b><span>목포식 한정식</span></div>
-<div><b>국내 1호</b><span>보리굴비 명장</span></div>
+<div><b>제18호 명인</b><span>목포음식 명인 인증</span></div>
 <div><b>위생등급</b><span>매우 우수 (별 3개)</span></div>
 </div>
 </div>
@@ -369,14 +369,39 @@ about = inner_hero('about-hero', 'ABOUT YEHYANG', '정성을 담은<br>목포의
 <div class="signature-content">
 {eyebrow('CERTIFICATES &amp; AWARDS')}
 <h2>대한민국이 인정한<br><em>한식의 명인</em></h2>
+<p class="chef-name">대표 <b>오선영</b> <small>Oh Sun-young</small></p>
 <ul class="cred-list">
+<li><span>명인</span>목포음식 제18호 명인 · 한국음식명장 · 대한민국 한식대가</li>
+<li><span>대상</span>월드푸드 챔피언십 · 남도미식 등 대상 5회</li>
+<li><span>장관상</span>보건복지부 · 해양수산부 · 고용노동부 · 농림축산식품부</li>
+<li><span>특허</span>비파를 이용한 찐보리굴비 특허</li>
 <li><span>자격</span>한식 · 중식 · 양식 조리 자격증</li>
-<li><span>인증</span>목포 조리명인 · 국내 1호 보리굴비 명장</li>
-<li><span>수상</span>2026 대한민국 국제요리&amp;제과 경연대회 농림축산식품부 장관상</li>
-<li><span>수상</span>보건복지부 장관상</li>
-<li><span>선정</span>남도음식명가 12년 연속 · 전남·목포 으뜸맛집</li>
 </ul>
-<a class="text-link" href="menu.html">메뉴 살펴보기 {ARROW}</a>
+<a class="text-link" href="#awards">수상 경력 전체 보기 {ARROW}</a>
+</div>
+</section>
+
+<section class="section-pad awards-section" id="awards">
+<div class="wrap">
+<div class="section-heading">
+<div>{eyebrow('AWARDS &amp; HONORS')}<h2>수상 · 인증 경력</h2></div>
+<p>대표 오선영이 걸어온 길</p>
+</div>
+<div class="awards-top">
+<div>
+<h3 class="awards-sub">대상 수상</h3>
+<ol class="award-timeline"><li><time>2026</time><b>남도미식 대상</b><span>농림축산식품부</span></li><li><time>2024</time><b>세계음식문화연구회 단체전시 대상</b><span>고용노동부</span></li><li><time>2023</time><b>특별전시 종합대상</b><span>국회의장</span></li><li><time>2023</time><b>한식대가조리과학연구회 대상</b><span>해양수산부</span></li><li><time>2022</time><b>월드푸드 챔피언십 대상</b><span>보건복지부</span></li></ol>
+</div>
+<div>
+<h3 class="awards-sub">명인 인증 · 특허 · 상표</h3>
+<ol class="award-timeline cert"><li><time>2024. 08. 27</time><b>상표등록 (송천) 예향</b></li><li><time>2024. 08. 05</time><b>비파를 이용한 찐보리굴비 특허</b></li><li><time>2013. 11. 26</time><b>목포음식 제18호 명인 인증</b></li></ol>
+</div>
+</div>
+<div class="honor-cols">
+<div><h3 class="awards-sub">장관상 · 기관장상</h3><ul class="honor-list"><li>보건복지부 장관상</li><li>해양수산부 장관상</li><li>국회의장상</li><li>고용노동부 장관상</li><li>농림축산식품부 장관상</li><li>전라남도 도지사상</li><li>목포시장상</li><li>한국국제요리제과경연대회 수상</li><li>전라남도조리협회장상</li></ul></div>
+<div><h3 class="awards-sub">명인 · 칭호 · 자격</h3><ul class="honor-list"><li>목포음식 제18호 명인</li><li>한국음식명장</li><li>대한민국 한식대가</li><li>국내 1호 보리굴비 명장</li><li>한식 · 중식 · 양식 조리 자격증</li></ul></div>
+<div><h3 class="awards-sub">공로상 · 활동</h3><ul class="honor-list"><li>현) 목포대학교 경영행정대학원 26기 회장</li><li>광주전남외식산업사관학교 공로상</li><li>목포대학교 경영행정대학원 공로상</li><li>월간식당 심화과정 28기 공로상</li><li>연세대학교 생활환경대학원 FMP 공로상</li></ul></div>
+</div>
 </div>
 </section>
 
@@ -428,7 +453,7 @@ about = inner_hero('about-hero', 'ABOUT YEHYANG', '정성을 담은<br>목포의
 </section>
 '''
 page('about.html', f'예향 이야기 · 남도음식명가 | {NAME}',
-     '남도음식명가 12년 연속 선정, 국내 1호 보리굴비 명장. 목포 평화광장 예향한정식의 이야기와 인증·수상 내역을 소개합니다.', about)
+     '목포음식 제18호 명인, 한국음식명장·대한민국 한식대가. 월드푸드 챔피언십 대상, 보건복지부·해양수산부·고용노동부 장관상 등 예향한정식의 수상·인증 경력을 소개합니다.', about)
 
 # ------------------------------------------------------------------ MENU
 def course_card(c, unit='1인', foot_base='1인 1찬 기준 · 굴비는 부세를 사용합니다.'):
@@ -571,7 +596,7 @@ space = inner_hero('space-hero', 'OUR SPACE', '공간 안내', '함께하는 인
 </section>
 
 <section class="signature-section">
-<div class="signature-photo"><img src="assets/store-room.webp" alt="여럿이 함께 앉는 예향한정식 단체석" loading="lazy"></div>
+<div class="signature-photo"><img src="assets/store-setting.webp" alt="손님 맞을 상을 차리는 예향한정식 단체석" loading="lazy"></div>
 <div class="signature-content">
 {eyebrow('FOR EVERY GATHERING')}
 <h2>작은 만남부터<br><em>큰 모임까지</em></h2>
